@@ -208,3 +208,16 @@ class sound {
     soundObject.volume = volume / 100;
   }
 }
+
+class timer {
+	constructor() {
+  	this.update = null;
+		this.timerObject = null;
+  }
+  start(speed) {
+  	this.timerObject = setInterval(this.update, speed);
+	}
+  stop() {
+  	clearInterval(this.timerObject);
+	}
+}
