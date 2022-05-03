@@ -169,3 +169,24 @@ class inputModule {
   	this.mouse.clicking = false;
 	}
 }
+
+class mathModule {
+	distance(x1, y1, x2, y2) {
+  	return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+	}
+  random(min, max) {
+  	return Math.floor((Math.random() * (Math.abs(min - max) + 1)) + min);
+	}
+  angle(x1, y1, x2, y2) {
+  	return Math.atan2(y1 - y2,  x1 - x2) * 57.2958;
+	}
+  rotationalX(angle) {
+    return Math.cos((angle) / 57.2958);
+  }
+	rotationalY(angle){
+    return Math.sin((angle) / 57.2958);
+  }
+  colliding(x1, y1, w1, h1, x2, y2, w2, h2) {
+    return (x1 + (w1 / 2) >= x2 - (w2 / 2) && x2 + (w2 / 2) >= x1 - (w1 / 2) && y1 + (h1 / 2) >= y2 - (h2 / 2) && y2 + (h2 / 2) >= y1 - (h1 / 2));
+  }
+}
