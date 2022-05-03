@@ -190,3 +190,21 @@ class mathModule {
     return (x1 + (w1 / 2) >= x2 - (w2 / 2) && x2 + (w2 / 2) >= x1 - (w1 / 2) && y1 + (h1 / 2) >= y2 - (h2 / 2) && y2 + (h2 / 2) >= y1 - (h1 / 2));
   }
 }
+
+class sound {
+	create(source) {
+    return new Audio(source);
+  }
+  play(soundObject) {
+    soundObject.play();
+  }
+  pause(soundObject) {
+    soundObject.pause();
+  }
+  resetTime(soundObject, time) {
+    soundObject.currentTime = time;
+  }
+  setVolume(soundObject, volume) {
+    soundObject.volume = volume / 100;
+  }
+}
