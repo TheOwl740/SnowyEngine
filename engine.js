@@ -5,9 +5,9 @@ class canvasModule {
 		document.head.innerHTML += "<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><style>canvas{margin:0;border:0;padding:0;}body{margin:0;overflow:hidden;}</style>";
 		this.element = document.getElementById("canvas");
 		this.cx = this.element.getContext("2d");
-		this.element.width = JSON.parse(JSON.stringify(window.innerWidth));
+		this.element.width = window.innerWidth;
 		this.w = window.innerWidth;
-		this.element.height = JSON.parse(JSON.stringify(window.innerHeight));
+		this.element.height = window.innerHeight;
 		this.h = window.innerHeight;
 	}
   setDimensions(w, h) {
@@ -191,7 +191,7 @@ class mathModule {
   }
 }
 
-class sound {
+class soundModule {
 	create(source) {
     return new Audio(source);
   }
@@ -209,7 +209,7 @@ class sound {
   }
 }
 
-class timer {
+class timerModule {
 	constructor() {
   	this.update = null;
 		this.timerObject = null;
@@ -221,3 +221,11 @@ class timer {
   	clearInterval(this.timerObject);
 	}
 }
+
+var t = new timerModule();
+var c = new canvasModule();
+
+function update() {
+	canvas.rect("black", 1, 100, 100, 50, 0, 0, 0, 5, false)
+}
+t.start(4);
