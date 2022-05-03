@@ -211,21 +211,12 @@ class soundModule {
 
 class timerModule {
 	constructor() {
-  	this.update = null;
 		this.timerObject = null;
   }
-  start(speed) {
-  	this.timerObject = setInterval(this.update, speed);
+  start(speed, updateFunction) {
+  	this.timerObject = setInterval(updateFunction, speed);
 	}
   stop() {
   	clearInterval(this.timerObject);
 	}
 }
-
-var t = new timerModule();
-var c = new canvasModule();
-
-function update() {
-	canvas.rect("black", 1, 100, 100, 50, 0, 0, 0, 5, false)
-}
-t.start(4);
