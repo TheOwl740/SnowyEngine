@@ -131,3 +131,41 @@ class canvasModule {
     this.cx.restore();
   }
 }
+
+class inputModule {
+	constructor() {
+		this.mouse = {
+  		x: null,
+  		y: null,
+  		clicking: false
+		};
+    this.pressedKeys = [
+		];
+    document.addEventListener("keydown", this.newKey);
+		document.addEventListener("keyup", this.removeKey);
+    document.addEventListener("mousemove", this.locateMouse);
+		document.addEventListener("mousedown", this.mDown);
+		document.addEventListener("mouseup", this.mUp);
+  }
+  newKey(e) {
+  	if(!input.pressedKeys.includes(e.key)) {
+    	this.pressedKeys.push(e.key);
+  	}
+  }
+  removeKey(e) {
+  	this.pressedKeys.splice(this.pressedKeys.indexOf(e.key), 1);
+	}
+  getKey(key) {
+  	return this.pressedKeys.includes(key);
+	}
+  locateMouse(e) {
+  	this.mouse.x = e.clientX;
+ 		this.mouse.y = e.clientY;
+	}
+ 	mDown() {
+  	this.mouse.clicking = true;
+	}
+	mUp() {
+  	this.mouse.clicking = false;
+	}
+}
