@@ -7,37 +7,37 @@ Applying the modules to your code is very simple. First, run the script on your 
 ## Modules
 The engine is based on 5 core modules with different utilities. These are the Canvas, Timer, Sound, Input and Math modules. Each has it's own category and documentation below.
 
-### Canvas
+## Canvas
 The core module of JS game development, this class is used to draw images and shapes on an HTML canvas it creates.
 
-#### Initialisation
+### Initialisation
 When the canvas element is initialised, it wipes the HTML document and replaces it with a full size canvas.
 
-##### Constructor
+#### Constructor
 This module does not take any parameter values in the constructor.
 
-##### Data
+#### Data
 This module applies several initial object properties when a new object is constructed. These are as follows: The **element** property is a reference to the HTML canvas element that the module is based on. The **cx** property is the context for the canvas for raw drawing functions and reference by the class's methods. The **w** and **h** properties are the width and height values, in pixels, for the canvas, respectively.
 
-#### Methods
+### Methods
 This class contains a large variety of methods.
 
-### Timer
+## Timer
 This modules is used in combination with the canvas module to create animated drawings, or on its own for other purposes. It is used to fire a function at select intervals. If multiple instances of this class are created, each can have their own timer.
 
-#### Initialisation
+### Initialisation
 
-##### Constructor
+#### Constructor
 This module also takes no values in the constructor.
 
-##### Data
+#### Data
 Child objects of this module only contain one property: **timerObject**, which is a reference to the interval.
 
-#### Methods
+### Methods
 This class has two methods.
 
-##### start(speed, updateFunction)
+#### start(speed, updateFunction)
 This method creates a new interval which fires at an interval in milliseconds defined by the **speed** parameter.
 
-##### stop()
+#### stop()
 This method stops the interval from firing and clears it.
