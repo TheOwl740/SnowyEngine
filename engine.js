@@ -100,7 +100,7 @@ class canvasModule {
     this.cx.lineTo(x2, y2);
     this.cx.stroke();
   }
-  createSprite (source, columns, rows, w, h) {
+  createSprite(source, columns, rows, w, h) {
     return {
       source: source,
       columns: columns,
@@ -133,41 +133,20 @@ class canvasModule {
 }
 
 class inputModule {
-	constructor() {
+	constructor(press, up, move, click, unclick) {
 		this.mouse = {
-  		x: null,
-  		y: null,
+  		x: 0,
+  		y: 0,
   		clicking: false
 		};
     this.pressedKeys = [
 		];
-    document.addEventListener("keydown", this.newKey);
-		document.addEventListener("keyup", this.removeKey);
-    document.addEventListener("mousemove", this.locateMouse);
-		document.addEventListener("mousedown", this.mDown);
-		document.addEventListener("mouseup", this.mUp);
+		document.addEventListener("keydown", press);
+		document.addEventListener("keyup", up);
+    document.addEventListener("mousemove", move);
+		document.addEventListener("mousedown", click);
+		document.addEventListener("mouseup", unclick);
   }
-  newKey(e) {
-  	if(!input.pressedKeys.includes(e.key)) {
-    	this.pressedKeys.push(e.key);
-  	}
-  }
-  removeKey(e) {
-  	this.pressedKeys.splice(this.pressedKeys.indexOf(e.key), 1);
-	}
-  getKey(key) {
-  	return this.pressedKeys.includes(key);
-	}
-  locateMouse(e) {
-  	this.mouse.x = e.clientX;
- 		this.mouse.y = e.clientY;
-	}
- 	mDown() {
-  	this.mouse.clicking = true;
-	}
-	mUp() {
-  	this.mouse.clicking = false;
-	}
 }
 
 class mathModule {
