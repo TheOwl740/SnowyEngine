@@ -29,13 +29,25 @@ This method sets the width and height of the canvas in pixels. Use an int value,
 This method draws a rectangle of the specfied **color**, with an opacity float from 0 - 1 defined by **alpha**, at (**x**, **y**) with a width (**w**) and height (**h**) in pixels. The **r** value is the rotation in degrees, the **xOffset** and **yOffset** change the axis of rotation, in relation to the center of the rectangle. The **lw** value defines the line width of the rectangle's border, and the **filled** boolean specifies if the rectangle should be filled with the **color**.
 
 #### createImage(source)
-This method returns a new **Image()** object with an srd defined by the **source** parameter. This object is used to draw single images, but not sprites.
+This method returns a new **Image()** object with an src defined by the **source** parameter. This object is used as the source for the **image()** method.
 
 #### image(source, alpha, x, y, w, h, r, xOffset, yOffset, hFlip, vFlip)
 This method draws an image from an object, specified by **source**, which was created prior to loading with the **createImage()** method. This image has an opacity float from 0 - 1 defined by **alpha**, is located at (**x**, **y**) with a width of (**w**) and height of (**h**). The **r** value is the rotation in degrees and the **xOffset** and **yOffset** change the axis of rotation, in relation to the center of the rectangle. The **hFlip** and **vFlip** parameters are booleans which when true mirror the image horizontally and vertically, respectively.
 
 #### arc(color, alpha, x, y, radius, start, end, lw, filled)
 This method draws an arc of the specified **color**, with an opacity float of 0 - 1, at (**x**, **y**), with a **radius** defined by that parameter. The arc starts at the right point of the circle, and goes from that + the **start** value to the **end** value in degrees. The border width is defined by **lw** and the arc will be **filled** if that parameter is set to true.
+
+#### text(color, font, text, alpha, x, y, size, r, xOffset, yOffset)
+This method draws text on the canvas, in the specified **color**, using the **font** defined. The **text** drawn is specified in a string in that parameter. The opacity is a float from 0 - 1 defined by **alpha**. It is drawn at (**x**, **y**) with a width of (**w**) and height of (**h**). The **r** value is the rotation in degrees and the **xOffset** and **yOffset** change the axis of rotation, in relation to the origin of the text, on the left side.
+
+#### line(color, alpha, x1, y1, x2, y2, w)
+This method draws a straight, rectangular line of the specfied **color**, with an opacity float from 0 - 1 defined by **alpha**, from the point (**x1**, **y1**) to the point (**x2**, **y2**), with a line width defined by **w**
+
+#### createSprite(source, columns, rows, w, h)
+This method returns a sprite object for use in the **drawSprite** function. It takes the **source** of the image, the number of **columns** and **rows** in the sheet, and the width (**w**) and height (**h**) of the image resolution in pixels to properly parse the individual sprites.
+
+#### drawSprite(sprite, alpha, column, row, x, y, w, h, r, xOffset, yOffset)
+This method draws a **sprite** defined by that parameter, with an opacity float from 0 - 1 defined by **alpha**. It draws the image within the sheet in the **column** and **row** specified. It is located at (**x**, **y**), with a width of (**w**) and height of (**h**). The **r** value is the rotation in degrees and the **xOffset** and **yOffset** change the axis of rotation, in relation to the center of the rectangle. The **hFlip** and **vFlip** parameters are booleans which when true mirror the image horizontally and vertically, respectively.
 
 ## Timer
 This modules is used in combination with the canvas module to create animated drawings, or on its own for other purposes. It is used to fire a function at select intervals. If multiple instances of this class are created, each can have their own timer.
