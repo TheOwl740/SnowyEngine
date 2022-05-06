@@ -109,7 +109,7 @@ class canvasModule {
       h: h
     };
   }
-  drawSprite(sprite, alpha, column, row, x, y, w, h, r, xOffset, yOffset) {
+  drawSprite(sprite, alpha, column, row, x, y, w, h, r, xOffset, yOffset, hFlip, vFlip) {
     this.cx.globalAlpha = alpha;
     var image = sprite.source
     this.cx.save();
