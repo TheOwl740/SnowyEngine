@@ -73,7 +73,7 @@ class canvasModule {
   	this.cx.globalAlpha = alpha;
   	this.cx.beginPath();
   	this.cx.lineWidth = lw;
-  	this.cx.arc(x, y, radius, (start / 50) * Math.PI, (end / 50) * Math.PI, false);
+  	this.cx.arc(x, y, radius, (start / 180) * Math.PI, (end / 180) * Math.PI, false);
   	if(filled) {
   		this.cx.fillStyle = color;
   		this.cx.fill();
