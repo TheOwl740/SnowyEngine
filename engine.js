@@ -38,7 +38,6 @@ class ArcRenderer {
 class BorderRenderer {
 	constructor(color, alpha, lw) {
 		this.color = color;
-		this.style = style;
 		this.lw = lw;
 		this.alpha = alpha;
 	}
@@ -61,6 +60,12 @@ class Text {
 	}
 }
 
+class PolygonRenderer {
+	constructor(points) {
+		this.points = points;
+	}
+}
+
 var e = {
 	methods: {
 		setDimensions: null,
@@ -68,6 +73,7 @@ var e = {
 		image: null,
 		arc: null,
 		text: null,
+		polygon: null,
 		distance: null,
 		random: null,
 		angle: null,
@@ -177,6 +183,28 @@ e.methods.text = (transform, text, fillRenderer) => {
 	e.data.cx.fillText(text.content, transform.xo, transform.yo);
 	e.data.cx.restore();
 },
+e.methods.polygon = (transform, polygonRenderer, fillRenderer, borderRenderer) => {
+	e.data.cx.save();
+	e.data.cx.translate(transform.x, transform.y);
+	e.data.cx.rotate(transform.r * (Math.PI / 180));
+	e.data.cx.beginPath();
+	e.data.cx.moveTo(polygonRenderer.points[0].x, polygonRenderer.points[0].y)
+	var point = 0;
+	for(point = 1; point < polygonRenderer.points.length; point++) {
+		e.data.cx.lineTo(polygonRenderer.points[point].x, polygonRenderer.points[point].y)
+	}
+	if(fillRenderer !== null) {
+		e.data.cx.globalAlpha = fillRenderer.alpha;
+		e.data.cx.fillStyle = fillRenderer.color1;
+		e.data.cx.fill()
+	}
+	if(borderRenderer !== null) {
+		e.data.cx.globalAlpha = borderRenderer.alpha;
+		e.data.cx.lineWidth = borderRenderer.lw;
+		e.data.cx.strokeStyle = borderRenderer.color;
+		e.data.cx.stroke();
+	}
+}
 e.methods.distance = (transform1, transform2) => {
 	return Math.sqrt(Math.pow(transform1.x - transform2.x, 2) + Math.pow(transform1.y - transform2.y, 2));
 },
