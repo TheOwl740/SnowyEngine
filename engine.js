@@ -204,6 +204,7 @@ e.methods.polygon = (transform, polygonRenderer, fillRenderer, borderRenderer) =
 		e.data.cx.strokeStyle = borderRenderer.color;
 		e.data.cx.stroke();
 	}
+	e.data.cx.restore();
 }
 e.methods.distance = (transform1, transform2) => {
 	return Math.sqrt(Math.pow(transform1.x - transform2.x, 2) + Math.pow(transform1.y - transform2.y, 2));
