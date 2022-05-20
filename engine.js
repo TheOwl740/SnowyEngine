@@ -150,7 +150,7 @@ e.methods.image = (transform, imageRenderer, borderRenderer) => {
 	e.data.cx.globalAlpha = imageRenderer.alpha;
 	e.data.cx.translate(transform.x * fc.x, transform.y * fc.y);
 	e.data.cx.rotate(transform.r * fc.x * fc.y * (Math.PI / 180));
-	e.data.cx.drawImage(source, (transform.xo * fc.x) - (transform.w / 2), (transform.yo * fc.y) - (transform.h / 2), transform.w, transform.h);
+	e.data.cx.drawImage(imageRenderer.image, (transform.xo * fc.x) - (transform.w / 2), (transform.yo * fc.y) - (transform.h / 2), transform.w, transform.h);
 	if(borderRenderer !== null) {
 		e.data.cx.globalAlpha = borderRenderer.alpha;
 		e.data.cx.strokeStyle = borderRenderer.color;
