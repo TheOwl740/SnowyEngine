@@ -82,6 +82,8 @@ var e = {
 		colliding: null
 	},
 	data: {
+		w: 0,
+		h: 0,
 		element: document.getElementById("canvas"),
 		cx: document.getElementById("canvas").getContext("2d"),
 		cw: window.innerWidth,
@@ -124,6 +126,7 @@ e.methods.rect = (transform, fillRenderer, borderRenderer) => {
 		e.data.cx.lineWidth = borderRenderer.lw;
 		e.data.cx.globalAlpha = borderRenderer.alpha;
 		e.data.cx.strokeStyle = borderRenderer.color;
+		e.data.cx.beginPath();
 		e.data.cx.rect(transform.xo - (transform.w / 2), transform.yo - (transform.h / 2), transform.w, transform.h)
 		e.data.cx.stroke();
 	}
@@ -154,6 +157,7 @@ e.methods.image = (transform, imageRenderer, borderRenderer) => {
 	if(borderRenderer !== null) {
 		e.data.cx.globalAlpha = borderRenderer.alpha;
 		e.data.cx.strokeStyle = borderRenderer.color;
+		e.data.cx.beginPath();
 		e.data.cx.rect(transform.xo - (transform.w / 2), transform.yo - (transform.h / 2), transform.w, transform.h)
 		e.data.cx.stroke();
 	}
