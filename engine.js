@@ -82,8 +82,8 @@ var e = {
 		colliding: null
 	},
 	data: {
-		w: 0,
-		h: 0,
+		w: window.innerWidth,
+		h: window.innerHeight,
 		element: document.getElementById("canvas"),
 		cx: document.getElementById("canvas").getContext("2d"),
 		cw: window.innerWidth,
