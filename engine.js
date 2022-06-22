@@ -6,62 +6,68 @@ document.head.innerHTML += "<meta charset=\"utf-8\"><meta name=\"viewport\" cont
 
 //CLASSES
 class Transform {
-	constructor(x, y, w, h, r, xo, yo) {
+	constructor(x, y, r) {
 		this.x = x;
 		this.y = y;
-		this.w = w;
-		this.h = h;
 		this.r = r;
-		this.xo = xo;
-		this.yo = yo;
 	}
 }
 
 class FillRenderer {
-	constructor(color1, color2, alpha, dir, style) {
+	constructor(color1, color2, alpha, dir) {
+		this.type = "fillRenderer";
 		this.color1 = color1;
 		this.color2 = color2;
-		this.style = style;
 		this.dir = dir;
 		this.alpha = alpha;
 	}
 }
 
-class ArcRenderer {
-	constructor(radius, start, end) {
-		this.radius = radius;
-		this.start = start;
-		this.end = end;
-	}
-}
-
-class BorderRenderer {
-	constructor(color, alpha, lw) {
-		this.color = color;
-		this.lw = lw;
-		this.alpha = alpha;
-	}
-}
-
 class ImageRenderer {
-	constructor(image, alpha, hf, vf) {
+	constructor(image, alpha, x, y, w, h, hf, vf) {
+		this.type = "imageRenderer";
 		this.image = image;
+		this.x = x;
+		this.y = y;
+		this.w = w;
+		this.h = h;
 		this.hf = hf;
 		this.vf = vf;
 		this.alpha = alpha;
 	}
 }
 
+class BorderRenderer {
+	constructor(color, alpha, lw) {
+		this.type = "borderRenderer";
+		this.color = color;
+		this.lw = lw;
+		this.alpha = alpha;
+	}
+}
+
 class Text {
 	constructor(font, text, size) {
+		this.type = "text";
+		this.text = text;
 		this.font = font;
-		this.content = content;
+		this.x = x;
+		this.y = y;
 		this.size = size;
 	}
 }
 
-class PolygonRenderer {
-	constructor(points) {
+class Polygon {
+	constructor(tris) {
+		this.type = "polygon";
+		this.tris = tris;
+	}
+}
+
+class Tri {
+	constructor(points, borders) {
+		this.type = "tri";
+		this.borders = borders;
 		this.points = points;
 	}
 }
@@ -69,17 +75,16 @@ class PolygonRenderer {
 var e = {
 	methods: {
 		setDimensions: null,
-		rect: null,
-		image: null,
-		arc: null,
-		text: null,
-		polygon: null,
-		distance: null,
-		random: null,
-		angle: null,
-		rotationalX: null,
-		rotationalY: null,
-		colliding: null
+		renderImage: null,
+		renderText: null,
+		renderPolygon: null,
+		calcDistance: null,
+		randomNum: null,
+		calcAngle: null,
+		calcRotationalX: null,
+		calcRotationalY: null,
+		detectCollision: null,
+		clearCanvas: null
 	},
 	data: {
 		w: window.innerWidth,
@@ -94,9 +99,14 @@ var e = {
 			clicking: false
 		},
 		pressedKeys: [
-		]
+		],
+		camera: {
+			x: 0,
+			y: 0,
+			zoom: 1
+		}
 	}
-}
+};
 
 //FUNCTIONS
 e.methods.setDimensions = (w, h) => {
@@ -112,27 +122,7 @@ e.methods.setDimensions = (w, h) => {
 		e.data.element.height = h;
 	}
 },
-e.methods.rect = (transform, fillRenderer, borderRenderer) => {
-	e.data.cx.beginPath();
-	e.data.cx.save();
-	e.data.cx.translate(transform.x, transform.y);
-	e.data.cx.rotate(transform.r * (Math.PI / 180));
-	if(fillRenderer !== null) {
-		e.data.cx.globalAlpha = fillRenderer.alpha;
-		e.data.cx.fillStyle = fillRenderer.color1;
-		e.data.cx.fillRect(transform.xo - (transform.w / 2), transform.yo - (transform.h / 2), transform.w, transform.h);
-	}
-	if(borderRenderer !== null) {
-		e.data.cx.lineWidth = borderRenderer.lw;
-		e.data.cx.globalAlpha = borderRenderer.alpha;
-		e.data.cx.strokeStyle = borderRenderer.color;
-		e.data.cx.beginPath();
-		e.data.cx.rect(transform.xo - (transform.w / 2), transform.yo - (transform.h / 2), transform.w, transform.h)
-		e.data.cx.stroke();
-	}
-	e.data.cx.restore();
-},
-e.methods.image = (transform, imageRenderer, borderRenderer) => {
+e.methods.renderImage = (transform, imageRenderer) => {
 	var fc = {
 		x: 1,
 		y: 1
@@ -151,56 +141,42 @@ e.methods.image = (transform, imageRenderer, borderRenderer) => {
 		e.data.cx.scale(1, 1);
 	}
 	e.data.cx.globalAlpha = imageRenderer.alpha;
-	e.data.cx.translate(transform.x * fc.x, transform.y * fc.y);
+	e.data.cx.translate(((transform.x - camera.x) / e.data.camera.zoom) * fc.x, ((transform.y - camera.y) / e.data.camera.zoom) * fc.y);
 	e.data.cx.rotate(transform.r * fc.x * fc.y * (Math.PI / 180));
-	e.data.cx.drawImage(imageRenderer.image, (transform.xo * fc.x) - (transform.w / 2), (transform.yo * fc.y) - (transform.h / 2), transform.w, transform.h);
-	if(borderRenderer !== null) {
-		e.data.cx.globalAlpha = borderRenderer.alpha;
-		e.data.cx.strokeStyle = borderRenderer.color;
-		e.data.cx.beginPath();
-		e.data.cx.rect(transform.xo - (transform.w / 2), transform.yo - (transform.h / 2), transform.w, transform.h)
-		e.data.cx.stroke();
-	}
+	e.data.cx.drawImage(imageRenderer.image, ((imageRenderer.x / e.data.camera.zoom) * fc.x) - ((imageRenderer.w / e.data.camera.zoom) / 2), ((imageRenderer.y / e.data.camera.zoom) * fc.y) - ((imageRenderer.h / e.data.camera.zoom) / 2), imageRenderer.w / e.data.camera.zoom, imageRenderer.h / e.data.camera.zoom);
 	e.data.cx.restore();
 },
-e.methods.arc = (transform, arcRenderer, fillRenderer, borderRenderer) => {
-	e.data.cx.beginPath();
-	e.data.cx.arc(transform.x, transform.y, arcRenderer.radius, (arcRenderer.start / 180) * Math.PI, (arcRenderer.end / 180) * Math.PI, false);
-	if(fillRenderer !== null) {
-		e.data.cx.globalAlpha = alpha;
-		e.data.cx.fillStyle = color;
-		e.data.cx.fill();
-	}
-	if(borderRenderer !== null) {
-		e.data.cx.lineWidth = borderRenderer.lw;
-		e.data.cx.strokeStyle = borderRenderer.color;
-		e.data.cx.stroke();
-	}
-},
-e.methods.text = (transform, text, fillRenderer) => {
+e.methods.renderText = (transform, text, fillRenderer) => {
 	e.data.cx.save();
-	e.data.cx.translate(transform.x, transform.y);
+	e.data.cx.translate((transform.x - camera.x) / e.data.camera.zoom, (transform.y - camera.y) / e.data.camera.zoom);
 	e.data.cx.rotate(transform.r * (Math.PI / 180));
 	e.data.cx.globalAlpha = fillRenderer.alpha;
-	e.data.cx.font = text.size + "px " + text.font;
+	e.data.cx.font = (text.size / e.data.camera.zoom) + "px " + text.font;
 	e.data.cx.fillStyle = fillRenderer.color1;
-	e.data.cx.fillText(text.content, transform.xo, transform.yo);
+	e.data.cx.fillText(text.text, text.x / e.data.camera.zoom, text.y / e.data.camera.zoom);
 	e.data.cx.restore();
 },
-e.methods.polygon = (transform, polygonRenderer, fillRenderer, borderRenderer) => {
+e.methods.renderPolygon = (transform, polygon, fillRenderer, borderRenderer) => {
 	e.data.cx.save();
-	e.data.cx.translate(transform.x, transform.y);
+	e.data.cx.translate((transform.x - e.data.camera.x) / e.data.camera.zoom, (transform.y - e.data.camera.y) / e.data.camera.zoom);
 	e.data.cx.rotate(transform.r * (Math.PI / 180));
 	e.data.cx.beginPath();
-	e.data.cx.moveTo(polygonRenderer.points[0].x, polygonRenderer.points[0].y)
-	var point = 0;
-	for(point = 1; point < polygonRenderer.points.length; point++) {
-		e.data.cx.lineTo(polygonRenderer.points[point].x, polygonRenderer.points[point].y)
+	let tri = 0;
+	for(tri = 0; tri < polygon.tris.length; tri++) {
+		e.data.cx.moveTo(polygon.tris[tri].points[0].x / e.data.camera.zoom, polygon.tris[tri].points[0].y / e.data.camera.zoom);
+		let point = 0;
+		for(point = 0; point < polygon.tris[tri].borders; point++) {
+			if(point === 2) {
+				e.data.cx.lineTo(polygon.tris[tri].points[0].x / e.data.camera.zoom, polygon.tris[tri].points[0].y / e.data.camera.zoom);
+			} else {
+				e.data.cx.lineTo(polygon.tris[tri].points[point + 1].x / e.data.camera.zoom, polygon.tris[tri].points[point + 1].y / e.data.camera.zoom);
+			}
+		}
 	}
 	if(fillRenderer !== null) {
 		e.data.cx.globalAlpha = fillRenderer.alpha;
 		e.data.cx.fillStyle = fillRenderer.color1;
-		e.data.cx.fill()
+		e.data.cx.fill();
 	}
 	if(borderRenderer !== null) {
 		e.data.cx.globalAlpha = borderRenderer.alpha;
@@ -209,25 +185,142 @@ e.methods.polygon = (transform, polygonRenderer, fillRenderer, borderRenderer) =
 		e.data.cx.stroke();
 	}
 	e.data.cx.restore();
-}
-e.methods.distance = (transform1, transform2) => {
+};
+e.methods.calcDistance = (transform1, transform2) => {
 	return Math.sqrt(Math.pow(transform1.x - transform2.x, 2) + Math.pow(transform1.y - transform2.y, 2));
 },
-e.methods.random = (min, max) => {
+e.methods.randomNum = (min, max) => {
 	return Math.floor((Math.random() * (Math.abs(min - max) + 1)) + min);
 },
-e.methods.angle = (x1, y1, x2, y2) => {
-	return Math.atan2(y1 - y2,  x1 - x2) * 57.2958;
+e.methods.calcAngle = (transform1, transform2) => {
+  if(Math.round(Math.atan2((transform1.y - transform2.y) * -1,  transform1.x - transform2.x) * -57.2958) - 90 < 0) {
+    return Math.round(Math.atan2((transform1.y - transform2.y) * -1,  transform1.x - transform2.x) * -57.2958) + 270;
+  } else {
+  	return Math.round(Math.atan2((transform1.y - transform2.y) * -1,  transform1.x - transform2.x) * -57.2958) - 90;
+  }
 },
-e.methods.rotationalX = (angle) => {
+e.methods.calcRotationalX = (angle) => {
 	return Math.cos((angle) / 57.2958);
 },
-e.methods.rotationalY = (angle) => {
+e.methods.calcRotationalY = (angle) => {
 	return Math.sin((angle) / 57.2958);
 },
-e.methods.colliding = (transform1, transform2) => {
-	return (transform1.x + (transform1.w / 2) >= transform2.x - (transform2.w / 2) && transform2.x + (transform2.w / 2) >= transform1.x - (transform1.w / 2) && transform1.y + (transform1.h / 2) >= transform1.y - (transform2.h / 2) && transform2.y + (transform2.h / 2) >= transform1.y - (transform1.h / 2));
-}
+e.methods.detectCollision = (transform1, polygon1, transform2, polygon2) => {
+	if(polygon1 === null) {
+		let tri = 0;
+		for(tri = 0; tri < polygon2.tris.length; tri++) {
+		  let angleTotal = 0;
+			let point = 0;
+			for(point = 0; point < 3; point++) {
+				if(point < 2) {
+          if(Math.abs(e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[point].x, transform2.y + polygon2.tris[tri].points[point].y)) - e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[point + 1].x, transform2.y + polygon2.tris[tri].points[point + 1].y))) > 180) {
+            if(e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[point].x, transform2.y + polygon2.tris[tri].points[point].y)) < 180) {
+              angleTotal += Math.abs((e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[point].x, transform2.y + polygon2.tris[tri].points[point].y)) + 360) - e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[point + 1].x, transform2.y + polygon2.tris[tri].points[point + 1].y)));
+            } else {
+              angleTotal += Math.abs(e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[point].x, transform2.y + polygon2.tris[tri].points[point].y)) - (e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[point + 1].x, transform2.y + polygon2.tris[tri].points[point + 1].y)) + 360));
+            }
+          } else {
+            angleTotal += Math.abs(e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[point].x, transform2.y + polygon2.tris[tri].points[point].y)) - e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[point + 1].x, transform2.y + polygon2.tris[tri].points[point + 1].y)));
+          }
+				} else {
+          if(Math.abs(e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[2].x, transform2.y + polygon2.tris[tri].points[2].y)) - e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[0].x, transform2.y + polygon2.tris[tri].points[0].y))) > 180) {
+            if(e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[2].x, transform2.y + polygon2.tris[tri].points[2].y)) < 180) {
+              angleTotal += Math.abs((e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[2].x, transform2.y + polygon2.tris[tri].points[2].y)) + 360) - e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[0].x, transform2.y + polygon2.tris[tri].points[0].y)));
+            } else {
+              angleTotal += Math.abs(e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[2].x, transform2.y + polygon2.tris[tri].points[2].y)) - (e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[0].x, transform2.y + polygon2.tris[tri].points[0].y)) + 360));
+            }
+          } else {
+            angleTotal += Math.abs(e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[2].x, transform2.y + polygon2.tris[tri].points[2].y)) - e.methods.calcAngle(transform1, new Transform(transform2.x + polygon2.tris[tri].points[0].x, transform2.y + polygon2.tris[tri].points[0].y)));
+          }
+        }
+			}
+			if(angleTotal === 360) {
+        return true;
+		  }
+		}
+		return false;
+	} else {
+    let testTri = 0;
+    for(testTri = 0; testTri < polygon1.tris.length; testTri++) {
+      let testPoint = 0;
+      for(testPoint = 0; testPoint < polygon1.tris[testTri].points.length; testPoint++) {
+        let tri = 0;
+        for(tri = 0; tri < polygon2.tris.length; tri++) {
+          let angleTotal = 0;
+          let point = 0;
+          for(point = 0; point < 3; point++) {
+            if(point < 2) {
+              if(Math.abs(e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[point].x, transform2.y + polygon2.tris[tri].points[point].y)) - e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[point + 1].x, transform2.y + polygon2.tris[tri].points[point + 1].y))) > 180) {
+                if(e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[point].x, transform2.y + polygon2.tris[tri].points[point].y)) < 180) {
+                  angleTotal += Math.abs((e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[point].x, transform2.y + polygon2.tris[tri].points[point].y)) + 360) - e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[point + 1].x, transform2.y + polygon2.tris[tri].points[point + 1].y)));
+                } else {
+                  angleTotal += Math.abs(e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[point].x, transform2.y + polygon2.tris[tri].points[point].y)) - (e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[point + 1].x, transform2.y + polygon2.tris[tri].points[point + 1].y)) + 360));
+                }
+              } else {
+                angleTotal += Math.abs(e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[point].x, transform2.y + polygon2.tris[tri].points[point].y)) - e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[point + 1].x, transform2.y + polygon2.tris[tri].points[point + 1].y)));
+              }
+    				} else {
+              if(Math.abs(e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[2].x, transform2.y + polygon2.tris[tri].points[2].y)) - e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[0].x, transform2.y + polygon2.tris[tri].points[0].y))) > 180) {
+                if(e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[2].x, transform2.y + polygon2.tris[tri].points[2].y)) < 180) {
+                  angleTotal += Math.abs((e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[2].x, transform2.y + polygon2.tris[tri].points[2].y)) + 360) - e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[0].x, transform2.y + polygon2.tris[tri].points[0].y)));
+                } else {
+                  angleTotal += Math.abs(e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[2].x, transform2.y + polygon2.tris[tri].points[2].y)) - (e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[0].x, transform2.y + polygon2.tris[tri].points[0].y)) + 360));
+                }
+              } else {
+                angleTotal += Math.abs(e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[2].x, transform2.y + polygon2.tris[tri].points[2].y)) - e.methods.calcAngle(new Transform(transform1.x + polygon1.tris[testTri].points[testPoint].x, transform1.y + polygon1.tris[testTri].points[testPoint].y), new Transform(transform2.x + polygon2.tris[tri].points[0].x, transform2.y + polygon2.tris[tri].points[0].y)));
+              }
+            }
+          }
+          if(angleTotal === 360) {
+            return true;
+          }
+        }
+      }
+    }
+    for(testTri = 0; testTri < polygon2.tris.length; testTri++) {
+      let testPoint = 0;
+      for(testPoint = 0; testPoint < polygon2.tris[testTri].points.length; testPoint++) {
+        let tri = 0;
+        for(tri = 0; tri < polygon1.tris.length; tri++) {
+          let angleTotal = 0;
+          let point = 0;
+          for(point = 0; point < 3; point++) {
+            if(point < 2) {
+              if(Math.abs(e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[point].x, transform1.y + polygon1.tris[tri].points[point].y)) - e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[point + 1].x, transform1.y + polygon1.tris[tri].points[point + 1].y))) > 180) {
+                if(e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[point].x, transform1.y + polygon1.tris[tri].points[point].y)) < 180) {
+                  angleTotal += Math.abs((e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[point].x, transform1.y + polygon1.tris[tri].points[point].y)) + 360) - e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[point + 1].x, transform1.y + polygon1.tris[tri].points[point + 1].y)));
+                } else {
+                  angleTotal += Math.abs(e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[point].x, transform1.y + polygon1.tris[tri].points[point].y)) - (e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[point + 1].x, transform1.y + polygon1.tris[tri].points[point + 1].y)) + 360));
+                }
+              } else {
+                angleTotal += Math.abs(e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[point].x, transform1.y + polygon1.tris[tri].points[point].y)) - e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[point + 1].x, transform1.y + polygon1.tris[tri].points[point + 1].y)));
+              }
+    				} else {
+              if(Math.abs(e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[2].x, transform1.y + polygon1.tris[tri].points[2].y)) - e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[0].x, transform1.y + polygon1.tris[tri].points[0].y))) > 180) {
+                if(e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[2].x, transform1.y + polygon1.tris[tri].points[2].y)) < 180) {
+                  angleTotal += Math.abs((e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[2].x, transform1.y + polygon1.tris[tri].points[2].y)) + 360) - e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[0].x, transform1.y + polygon1.tris[tri].points[0].y)));
+                } else {
+                  angleTotal += Math.abs(e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[2].x, transform1.y + polygon1.tris[tri].points[2].y)) - (e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[0].x, transform1.y + polygon1.tris[tri].points[0].y)) + 360));
+                }
+              } else {
+                angleTotal += Math.abs(e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[2].x, transform1.y + polygon1.tris[tri].points[2].y)) - e.methods.calcAngle(new Transform(transform2.x + polygon2.tris[testTri].points[testPoint].x, transform2.y + polygon2.tris[testTri].points[testPoint].y), new Transform(transform1.x + polygon1.tris[tri].points[0].x, transform1.y + polygon1.tris[tri].points[0].y)));
+              }
+            }
+          }
+          if(angleTotal === 360) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+	}
+};
+e.methods.clearCanvas = (fillRenderer) => {
+  e.data.cx.fillStyle = fillRenderer.color1;
+  e.data.cx.globalAlpha = 1;
+  e.data.cx.fillRect(0, 0, e.data.w, e.data.h);
+};
 
 //ADD EVENT LISTENERS
 document.addEventListener("keydown", (eObj) => {
