@@ -180,7 +180,7 @@ e.methods.renderPolygon = (transform, polygon, fillRenderer, borderRenderer) => 
 	}
 	if(borderRenderer !== null) {
 		e.data.cx.globalAlpha = borderRenderer.alpha;
-		e.data.cx.lineWidth = borderRenderer.lw;
+		e.data.cx.lineWidth = borderRenderer.lw / e.data.camera.zoom;
 		e.data.cx.strokeStyle = borderRenderer.color;
 		e.data.cx.stroke();
 	}
