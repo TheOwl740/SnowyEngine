@@ -123,38 +123,42 @@ e.methods.setDimensions = (w, h) => {
 	}
 },
 e.methods.renderImage = (transform, imageRenderer) => {
-	var fc = {
-		x: 1,
-		y: 1
-	};
-	e.data.cx.save();
-	if(imageRenderer.hf) {
-		e.data.cx.scale(-1, 1);
-		fc.x = -1;
-	} else {
-		e.data.cx.scale(1, 1);
+  if(transform.x + (imageRenderer.w / 2) >= e.data.camera.x && e.data.camera.x + (e.data.w * e.data.camera.zoom) >= transform.x - (imageRenderer.w / 2) && transform.y + (imageRenderer.h / 2) >= e.data.camera.y && e.data.camera.y + (e.data.h * e.data.camera.zoom) >= transform.y - (imageRenderer.h / 2)) {
+		var fc = {
+			x: 1,
+			y: 1
+		};
+		e.data.cx.save();
+		if(imageRenderer.hf) {
+			e.data.cx.scale(-1, 1);
+			fc.x = -1;
+		} else {
+			e.data.cx.scale(1, 1);
+		}
+		if(imageRenderer.vf) {
+			e.data.cx.scale(1, -1);
+			fc.y = -1;
+		} else {
+			e.data.cx.scale(1, 1);
+		}
+		e.data.cx.globalAlpha = imageRenderer.alpha;
+		e.data.cx.translate(((transform.x - e.data.camera.x) / e.data.camera.zoom) * fc.x, ((transform.y - e.data.camera.y) / e.data.camera.zoom) * fc.y);
+		e.data.cx.rotate(transform.r * fc.x * fc.y * (Math.PI / 180));
+		e.data.cx.drawImage(imageRenderer.image, ((imageRenderer.x / e.data.camera.zoom) * fc.x) - ((imageRenderer.w / e.data.camera.zoom) / 2), ((imageRenderer.y / e.data.camera.zoom) * fc.y) - ((imageRenderer.h / e.data.camera.zoom) / 2), imageRenderer.w / e.data.camera.zoom, imageRenderer.h / e.data.camera.zoom);
+		e.data.cx.restore();
 	}
-	if(imageRenderer.vf) {
-		e.data.cx.scale(1, -1);
-		fc.y = -1;
-	} else {
-		e.data.cx.scale(1, 1);
-	}
-	e.data.cx.globalAlpha = imageRenderer.alpha;
-	e.data.cx.translate(((transform.x - e.data.camera.x) / e.data.camera.zoom) * fc.x, ((transform.y - e.data.camera.y) / e.data.camera.zoom) * fc.y);
-	e.data.cx.rotate(transform.r * fc.x * fc.y * (Math.PI / 180));
-	e.data.cx.drawImage(imageRenderer.image, ((imageRenderer.x / e.data.camera.zoom) * fc.x) - ((imageRenderer.w / e.data.camera.zoom) / 2), ((imageRenderer.y / e.data.camera.zoom) * fc.y) - ((imageRenderer.h / e.data.camera.zoom) / 2), imageRenderer.w / e.data.camera.zoom, imageRenderer.h / e.data.camera.zoom);
-	e.data.cx.restore();
 },
 e.methods.renderText = (transform, text, fillRenderer) => {
-	e.data.cx.save();
-	e.data.cx.translate((transform.x - e.data.camera.x) / e.data.camera.zoom, (transform.y - e.data.camera.y) / e.data.camera.zoom);
-	e.data.cx.rotate(transform.r * (Math.PI / 180));
-	e.data.cx.globalAlpha = fillRenderer.alpha;
-	e.data.cx.font = (text.size / e.data.camera.zoom) + "px " + text.font;
-	e.data.cx.fillStyle = fillRenderer.color1;
-	e.data.cx.fillText(text.text, text.x / e.data.camera.zoom, text.y / e.data.camera.zoom);
-	e.data.cx.restore();
+	if(transform.x + (text.text.length * text.size) >= e.data.camera.x && e.data.camera.x + (e.data.w * e.data.camera.zoom) >= transform.x && transform.y >= e.data.camera.y && e.data.camera.y + (e.data.h * e.data.camera.zoom) >= transform.y) {
+		e.data.cx.save();
+		e.data.cx.translate((transform.x - e.data.camera.x) / e.data.camera.zoom, (transform.y - e.data.camera.y) / e.data.camera.zoom);
+		e.data.cx.rotate(transform.r * (Math.PI / 180));
+		e.data.cx.globalAlpha = fillRenderer.alpha;
+		e.data.cx.font = (text.size / e.data.camera.zoom) + "px " + text.font;
+		e.data.cx.fillStyle = fillRenderer.color1;
+		e.data.cx.fillText(text.text, text.x / e.data.camera.zoom, text.y / e.data.camera.zoom);
+		e.data.cx.restore();
+	}
 },
 e.methods.renderPolygon = (transform, polygon, fillRenderer, borderRenderer) => {
 	e.data.cx.save();
