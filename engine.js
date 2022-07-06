@@ -141,14 +141,14 @@ e.methods.renderImage = (transform, imageRenderer) => {
 		e.data.cx.scale(1, 1);
 	}
 	e.data.cx.globalAlpha = imageRenderer.alpha;
-	e.data.cx.translate(((transform.x - camera.x) / e.data.camera.zoom) * fc.x, ((transform.y - camera.y) / e.data.camera.zoom) * fc.y);
+	e.data.cx.translate(((transform.x - e.data.camera.x) / e.data.camera.zoom) * fc.x, ((transform.y - e.data.camera.y) / e.data.camera.zoom) * fc.y);
 	e.data.cx.rotate(transform.r * fc.x * fc.y * (Math.PI / 180));
 	e.data.cx.drawImage(imageRenderer.image, ((imageRenderer.x / e.data.camera.zoom) * fc.x) - ((imageRenderer.w / e.data.camera.zoom) / 2), ((imageRenderer.y / e.data.camera.zoom) * fc.y) - ((imageRenderer.h / e.data.camera.zoom) / 2), imageRenderer.w / e.data.camera.zoom, imageRenderer.h / e.data.camera.zoom);
 	e.data.cx.restore();
 },
 e.methods.renderText = (transform, text, fillRenderer) => {
 	e.data.cx.save();
-	e.data.cx.translate((transform.x - camera.x) / e.data.camera.zoom, (transform.y - camera.y) / e.data.camera.zoom);
+	e.data.cx.translate((transform.x - e.data.camera.x) / e.data.camera.zoom, (transform.y - e.data.camera.y) / e.data.camera.zoom);
 	e.data.cx.rotate(transform.r * (Math.PI / 180));
 	e.data.cx.globalAlpha = fillRenderer.alpha;
 	e.data.cx.font = (text.size / e.data.camera.zoom) + "px " + text.font;
@@ -160,9 +160,9 @@ e.methods.renderPolygon = (transform, polygon, fillRenderer, borderRenderer) => 
 	e.data.cx.save();
 	e.data.cx.translate((transform.x - e.data.camera.x) / e.data.camera.zoom, (transform.y - e.data.camera.y) / e.data.camera.zoom);
 	e.data.cx.rotate(transform.r * (Math.PI / 180));
-	e.data.cx.beginPath();
 	let tri = 0;
 	for(tri = 0; tri < polygon.tris.length; tri++) {
+		e.data.cx.beginPath();
 		e.data.cx.moveTo(polygon.tris[tri].points[0].x / e.data.camera.zoom, polygon.tris[tri].points[0].y / e.data.camera.zoom);
 		let point = 0;
 		for(point = 0; point < polygon.tris[tri].borders; point++) {
@@ -171,18 +171,33 @@ e.methods.renderPolygon = (transform, polygon, fillRenderer, borderRenderer) => 
 			} else {
 				e.data.cx.lineTo(polygon.tris[tri].points[point + 1].x / e.data.camera.zoom, polygon.tris[tri].points[point + 1].y / e.data.camera.zoom);
 			}
+			if(borderRenderer !== null) {
+				e.data.cx.globalAlpha = borderRenderer.alpha;
+				e.data.cx.lineWidth = borderRenderer.lw / e.data.camera.zoom;
+				e.data.cx.strokeStyle = borderRenderer.color;
+				e.data.cx.stroke();
+			} else {
+				e.data.cx.globalAlpha = 0;
+				e.data.cx.lineWidth = 0;
+				e.data.cx.stroke();
+			}
 		}
-	}
-	if(fillRenderer !== null) {
-		e.data.cx.globalAlpha = fillRenderer.alpha;
-		e.data.cx.fillStyle = fillRenderer.color1;
-		e.data.cx.fill();
-	}
-	if(borderRenderer !== null) {
-		e.data.cx.globalAlpha = borderRenderer.alpha;
-		e.data.cx.lineWidth = borderRenderer.lw / e.data.camera.zoom;
-		e.data.cx.strokeStyle = borderRenderer.color;
-		e.data.cx.stroke();
+		e.data.cx.beginPath();
+		for(point = 0; point < 3; point++) {
+			if(point === 2) {
+				e.data.cx.lineTo(polygon.tris[tri].points[0].x / e.data.camera.zoom, polygon.tris[tri].points[0].y / e.data.camera.zoom);
+			} else {
+				e.data.cx.lineTo(polygon.tris[tri].points[point + 1].x / e.data.camera.zoom, polygon.tris[tri].points[point + 1].y / e.data.camera.zoom);
+			}
+			e.data.cx.globalAlpha = 0;
+			e.data.cx.lineWidth = 0;
+			e.data.cx.stroke();
+		}
+		if(fillRenderer !== null) {
+			e.data.cx.globalAlpha = fillRenderer.alpha;
+			e.data.cx.fillStyle = fillRenderer.color1;
+			e.data.cx.fill();
+		}
 	}
 	e.data.cx.restore();
 };
