@@ -123,10 +123,10 @@ e.methods.setDimensions = (w, h) => {
 	}
 },
 e.methods.renderImage = (transform, imageRenderer) => {
-  if(transform.x + (imageRenderer.w / 2) >= e.data.camera.x && e.data.camera.x + (e.data.w * e.data.camera.zoom) >= transform.x - (imageRenderer.w / 2) && transform.y + (imageRenderer.h / 2) >= e.data.camera.y && e.data.camera.y + (e.data.h * e.data.camera.zoom) >= transform.y - (imageRenderer.h / 2)) {
+  if(transform.x + (imageRenderer.w / 2) >= e.data.camera.x && e.data.camera.x + (e.data.w * e.data.camera.zoom) >= transform.x - (imageRenderer.w / 2) && transform.y - (imageRenderer.h / 2) <= e.data.camera.y && e.data.camera.y - (e.data.h * e.data.camera.zoom) <= transform.y + (imageRenderer.h / 2)) {
 		var fc = {
 			x: 1,
-			y: 1
+			y: -1
 		};
 		e.data.cx.save();
 		if(imageRenderer.hf) {
@@ -136,10 +136,10 @@ e.methods.renderImage = (transform, imageRenderer) => {
 			e.data.cx.scale(1, 1);
 		}
 		if(imageRenderer.vf) {
-			e.data.cx.scale(1, -1);
-			fc.y = -1;
-		} else {
 			e.data.cx.scale(1, 1);
+			fc.y = 1;
+		} else {
+			e.data.cx.scale(1, -1);
 		}
 		e.data.cx.globalAlpha = imageRenderer.alpha;
 		e.data.cx.translate(((transform.x - e.data.camera.x) / e.data.camera.zoom) * fc.x, ((transform.y - e.data.camera.y) / e.data.camera.zoom) * fc.y);
@@ -149,7 +149,7 @@ e.methods.renderImage = (transform, imageRenderer) => {
 	}
 },
 e.methods.renderText = (transform, text, fillRenderer) => {
-	if(transform.x + (text.text.length * text.size) >= e.data.camera.x && e.data.camera.x + (e.data.w * e.data.camera.zoom) >= transform.x && transform.y >= e.data.camera.y && e.data.camera.y + (e.data.h * e.data.camera.zoom) >= transform.y) {
+	if(transform.x + (text.text.length * text.size) >= e.data.camera.x && e.data.camera.x + (e.data.w * e.data.camera.zoom) >= transform.x && transform.y <= e.data.camera.y && e.data.camera.y - (e.data.h * e.data.camera.zoom) <= transform.y) {
 		e.data.cx.save();
 		e.data.cx.translate((transform.x - e.data.camera.x) / e.data.camera.zoom, (transform.y - e.data.camera.y) / e.data.camera.zoom);
 		e.data.cx.rotate(transform.r * (Math.PI / 180));
@@ -212,17 +212,10 @@ e.methods.randomNum = (min, max) => {
 	return Math.floor((Math.random() * (Math.abs(min - max) + 1)) + min);
 },
 e.methods.calcAngle = (transform1, transform2) => {
-  if(Math.round(Math.atan2((transform1.y - transform2.y) * -1,  transform1.x - transform2.x) * -57.2958) - 90 < 0) {
-    return Math.round(Math.atan2((transform1.y - transform2.y) * -1,  transform1.x - transform2.x) * -57.2958) + 270;
-  } else {
-  	return Math.round(Math.atan2((transform1.y - transform2.y) * -1,  transform1.x - transform2.x) * -57.2958) - 90;
-  }
+  return Math.round(Math.atan2(transform1.y - transform2.y,  transform1.x - transform2.x) * 57.2958) + 180;
 },
-e.methods.calcRotationalX = (angle) => {
-	return Math.cos((angle) / 57.2958);
-},
-e.methods.calcRotationalY = (angle) => {
-	return Math.sin((angle) / 57.2958);
+e.methods.rotationalVector = (angle) => {
+	return new Transform(Math.cos((angle) / 57.2958), Math.sin((angle) / 57.2958));
 },
 e.methods.detectCollision = (transform1, polygon1, transform2, polygon2) => {
 	if(polygon1 === null) {
@@ -352,7 +345,7 @@ document.addEventListener("keyup", (eObj) => {
 });
 document.addEventListener("mousemove", (eObj) => {
 	e.data.mouse.x = eObj.clientX;
-	e.data.mouse.y = eObj.clientY;
+	e.data.mouse.y = eObj.clientY * -1;
 });
 document.addEventListener("mousedown", () => {
 	e.data.mouse.clicking = true;
@@ -364,3 +357,6 @@ document.addEventListener("mouseup", () => {
 //SET FULL CANVAS DIMENSIONS
 e.data.element.width = window.innerWidth;
 e.data.element.height = window.innerHeight;
+
+//RESCALE CANVAS TO PROPER Y
+e.data.cx.scale(1, -1);
