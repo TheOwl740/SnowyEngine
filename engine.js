@@ -1,7 +1,7 @@
 //jshint maxerr: 10000
 
 //CONSTRUCT DOCUMENT
-document.body.innerHTML = "<canvas id=\"canvas\"></canvas>" + document.body.innerHTML;
+document.body.innerHTML = "<canvas id=\"canvas\" style=\"border: 1px solid black\"></canvas>" + document.body.innerHTML;
 document.head.innerHTML += "<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><style>canvas{margin:0;border:0;padding:0;}body{margin:0;overflow:hidden;}</style>";
 
 //CLASSES
