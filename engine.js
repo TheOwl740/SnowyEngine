@@ -214,8 +214,8 @@ e.methods.randomNum = (min, max) => {
 e.methods.calcAngle = (transform1, transform2) => {
   return Math.round(Math.atan2(transform1.y - transform2.y,  transform1.x - transform2.x) * 57.2958) + 180;
 },
-e.methods.calcRotationalVector = (angle) => {
-	return new Transform(Math.cos((angle) / 57.2958), Math.sin((angle) / 57.2958));
+e.methods.calcRotationalVector = (angle, magnitude) => {
+	return new Transform(Math.cos((angle) / 57.2958) * magnitude, Math.sin((angle) / 57.2958) * magnitude);
 },
 e.methods.addTransform = (transform1, transform2) => {
   return new Transform(transform1.x + transform2.x, transform1.y + transform2.y, transform1.r + transform2.r);
