@@ -334,7 +334,7 @@ e.methods.detectCollision = (transform1, polygon1, transform2, polygon2) => {
 e.methods.clearCanvas = (fillRenderer) => {
   e.data.cx.fillStyle = fillRenderer.color1;
   e.data.cx.globalAlpha = 1;
-  e.data.cx.fillRect(0, 0, e.data.w, e.data.h);
+  e.data.cx.fillRect(0, 0, e.data.w, e.data.h * -1);
 };
 
 //ADD EVENT LISTENERS
