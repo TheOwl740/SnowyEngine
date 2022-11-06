@@ -89,7 +89,7 @@ var e = {
 	data: {
 		w: window.innerWidth,
 		h: window.innerHeight,
-		element: document.getElementById("canvas"),
+		canvas: document.getElementById("canvas"),
 		cx: document.getElementById("canvas").getContext("2d"),
 		cw: window.innerWidth,
 		ch: window.innerHeight,
