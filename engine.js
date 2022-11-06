@@ -222,6 +222,10 @@ e.methods.calcRotationalVector = (angle, magnitude) => {
 e.methods.addTransform = (transform1, transform2) => {
   return new Transform(transform1.x + transform2.x, transform1.y + transform2.y, transform1.r + transform2.r);
 };
+e.methods.roundTransform = (transform, decimalPlaces) => {
+  return new Transform(Math.round(transform.x * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces), Math.round(transform.y * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces), Math.round(transform.r * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces));
+};
+
 e.methods.detectCollision = (transform1, polygon1, transform2, polygon2) => {
 	if(polygon1 === null) {
 		let tri = 0;
