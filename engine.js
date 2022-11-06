@@ -7,6 +7,7 @@ document.head.innerHTML += "<meta charset=\"utf-8\"><meta name=\"viewport\" cont
 //CLASSES
 class Transform {
 	constructor(x, y, r) {
+	  this.type = "transform";
 		this.x = x;
 		this.y = y;
 		this.r = r;
@@ -47,7 +48,7 @@ class BorderRenderer {
 }
 
 class Text {
-	constructor(font, text, size) {
+	constructor(font, text, size, x, y) {
 		this.type = "text";
 		this.text = text;
 		this.font = font;
@@ -151,7 +152,8 @@ e.methods.renderImage = (transform, imageRenderer) => {
 e.methods.renderText = (transform, text, fillRenderer) => {
 	if(transform.x + (text.text.length * text.size) >= e.data.camera.x && e.data.camera.x + (e.data.w * e.data.camera.zoom) >= transform.x && transform.y <= e.data.camera.y && e.data.camera.y - (e.data.h * e.data.camera.zoom) <= transform.y) {
 		e.data.cx.save();
-		e.data.cx.translate((transform.x - e.data.camera.x) / e.data.camera.zoom, (transform.y - e.data.camera.y) / e.data.camera.zoom);
+		e.data.cx.scale(1, -1);
+		e.data.cx.translate((transform.x - e.data.camera.x) / e.data.camera.zoom, ((transform.y - e.data.camera.y) / e.data.camera.zoom) * -1);
 		e.data.cx.rotate(transform.r * (Math.PI / 180));
 		e.data.cx.globalAlpha = fillRenderer.alpha;
 		e.data.cx.font = (text.size / e.data.camera.zoom) + "px " + text.font;
