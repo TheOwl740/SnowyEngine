@@ -85,6 +85,8 @@ var e = {
 		calcRotationalX: null,
 		calcRotationalY: null,
 		detectCollision: null,
+		addTransfom: null,
+		roundTransform: null,
 		clearCanvas: null
 	},
 	data: {
