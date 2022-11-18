@@ -25,8 +25,9 @@ class FillRenderer {
 }
 
 class ImageRenderer {
-	constructor(image, alpha, x, y, w, h, hf, vf, cameraStatic) {
+	constructor(image, alpha, x, y, w, h, hf, vf, cameraStatic, useCulling) {
 		this.type = "imageRenderer";
+		this.useCulling = useCulling;
 		this.cameraStatic = cameraStatic;
 		this.image = image;
 		this.x = x;
@@ -49,8 +50,9 @@ class BorderRenderer {
 }
 
 class Text {
-	constructor(font, text, size, x, y, cameraStatic) {
+	constructor(font, text, size, x, y, cameraStatic, useCulling) {
 		this.type = "text";
+		this.useCulling = useCulling;
 		this.cameraStatic = cameraStatic;
 		this.text = text;
 		this.font = font;
@@ -130,7 +132,7 @@ e.methods.setDimensions = (w, h) => {
 },
 e.methods.renderImage = (transform, imageRenderer) => {
   if(imageRenderer.cameraStatic) {
-    if(transform.x + (imageRenderer.w / 2) >= 0 && transform.x - (imageRenderer.w / 2) <= e.data.w && transform.y - (imageRenderer.h / 2) <= 0 && transform.y + (imageRenderer.h / 2) >= e.data.h * -1) {
+    if(!imageRenderer.useCulling || (transform.x + (imageRenderer.w / 2) >= 0 && transform.x - (imageRenderer.w / 2) <= e.data.w && transform.y - (imageRenderer.h / 2) <= 0 && transform.y + (imageRenderer.h / 2) >= e.data.h * -1)) {
       let fc = {
       	x: 1,
       	y: -1
@@ -155,7 +157,7 @@ e.methods.renderImage = (transform, imageRenderer) => {
       e.data.cx.restore();
     }
   } else {
-    if(transform.x + (imageRenderer.w / 2) >= e.data.camera.x && e.data.camera.x + (e.data.w * e.data.camera.zoom) >= transform.x - (imageRenderer.w / 2) && transform.y - (imageRenderer.h / 2) <= e.data.camera.y && e.data.camera.y - (e.data.h * e.data.camera.zoom) <= transform.y + (imageRenderer.h / 2)) {
+    if(!imageRenderer.useCulling || (transform.x + (imageRenderer.w / 2) >= e.data.camera.x && e.data.camera.x + (e.data.w * e.data.camera.zoom) >= transform.x - (imageRenderer.w / 2) && transform.y - (imageRenderer.h / 2) <= e.data.camera.y && e.data.camera.y - (e.data.h * e.data.camera.zoom) <= transform.y + (imageRenderer.h / 2))) {
       let fc = {
       	x: 1,
       	y: -1
@@ -183,7 +185,7 @@ e.methods.renderImage = (transform, imageRenderer) => {
 },
 e.methods.renderText = (transform, text, fillRenderer) => {
   if(text.cameraStatic) {
-    if(transform.x + (text.text.length * text.size) >= 0 && e.data.w >= transform.x && transform.y <= 0 && e.data.h * -1 <= transform.y + (text.size * 2)) {
+    if(!text.useCulling || (transform.x + (text.text.length * text.size) >= 0 && e.data.w >= transform.x && transform.y <= 0 && e.data.h * -1 <= transform.y + (text.size * 2))) {
       e.data.cx.save();
       e.data.cx.scale(1, -1);
       e.data.cx.translate(transform.x, transform.y * -1);
@@ -195,7 +197,7 @@ e.methods.renderText = (transform, text, fillRenderer) => {
       e.data.cx.restore();
     }
   } else {
-    if(transform.x + (text.text.length * text.size) >= e.data.camera.x && e.data.camera.x + (e.data.w * e.data.camera.zoom) >= transform.x && transform.y <= e.data.camera.y && e.data.camera.y - (e.data.h * e.data.camera.zoom) <= transform.y - (text.size * 2)) {
+    if(!text.useCulling || (transform.x + (text.text.length * text.size) >= e.data.camera.x && e.data.camera.x + (e.data.w * e.data.camera.zoom) >= transform.x && transform.y <= e.data.camera.y && e.data.camera.y - (e.data.h * e.data.camera.zoom) <= transform.y - (text.size * 2))) {
       e.data.cx.save();
       e.data.cx.scale(1, -1);
       e.data.cx.translate((transform.x - e.data.camera.x) / e.data.camera.zoom, ((transform.y - e.data.camera.y) / e.data.camera.zoom) * -1);
@@ -447,8 +449,8 @@ document.addEventListener("keyup", (eObj) => {
 document.addEventListener("mousemove", (eObj) => {
 	e.data.mouse.absolute.x = eObj.clientX;
 	e.data.mouse.absolute.y = eObj.clientY * -1;
-	e.data.mouse.dynamic.x = (eObj.clientX + e.data.camera.x) / e.data.camera.zoom;
-	e.data.mouse.dynamic.y = (e.data.camera.y - eObj.clientY) / e.data.camera.zoom;
+	e.data.mouse.dynamic.x = (eObj.clientX * e.data.camera.zoom) + e.data.camera.x;
+	e.data.mouse.dynamic.y = e.data.camera.y - (eObj.clientY * e.data.camera.zoom);
 });
 document.addEventListener("mousedown", () => {
 	e.data.mouse.clicking = true;
