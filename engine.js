@@ -304,9 +304,16 @@ e.methods.renderPolygon = (transform, polygon, fillRenderer, borderRenderer) => 
 e.methods.calcDistance = (transform1, transform2) => {
 	return Math.sqrt(Math.pow(transform1.x - transform2.x, 2) + Math.pow(transform1.y - transform2.y, 2));
 },
-e.methods.randomNum = (min, max) => {
-	return Math.floor((Math.random() * (Math.abs(min - max) + 1)) + min);
+e.methods.randomNum = (limit1, limit2) => {
+  if(limit1 < limit2) {
+	  return Math.floor((Math.random() * (Math.abs(limit1 - limit2) + 1)) + limit1);
+  } else {
+	  return Math.floor((Math.random() * (Math.abs(limit2 - limit1) + 1)) + limit2);
+  }
 },
+e.methods.randomExp = (min, max, exp) => {
+  return Math.round(Math.pow(e.methods.randomNum(limit1, Math.pow(limit2, exp)), 1 / exp));
+};
 e.methods.calcAngle = (transform1, transform2) => {
   return Math.round(Math.atan2(transform1.y - transform2.y,  transform1.x - transform2.x) * 57.2958) + 180;
 },
