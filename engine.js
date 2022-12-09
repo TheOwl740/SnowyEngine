@@ -99,8 +99,6 @@ var e = {
 		h: window.innerHeight,
 		element: document.getElementById("canvas"),
 		cx: document.getElementById("canvas").getContext("2d"),
-		cw: window.innerWidth,
-		ch: window.innerHeight,
 		mouse: {
 			absolute: new Transform(0, 0, 0),
 			dynamic: new Transform(0, 0, 0),
@@ -312,7 +310,7 @@ e.methods.randomNum = (limit1, limit2) => {
   }
 },
 e.methods.randomExp = (min, max, exp) => {
-  return Math.round(Math.pow(e.methods.randomNum(limit1, Math.pow(limit2, exp)), 1 / exp));
+  return Math.round(Math.pow(e.methods.randomNum(min, Math.pow(max, exp)), 1 / exp));
 };
 e.methods.calcAngle = (transform1, transform2) => {
   return Math.round(Math.atan2(transform1.y - transform2.y,  transform1.x - transform2.x) * 57.2958) + 180;
