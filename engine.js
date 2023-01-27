@@ -14,6 +14,13 @@ class Transform {
 	}
 }
 
+class Vector2 {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
 class FillRenderer {
 	constructor(color1, color2, alpha, dir) {
 		this.type = "fillRenderer";
