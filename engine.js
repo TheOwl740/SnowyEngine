@@ -69,6 +69,15 @@ class Text {
 	}
 }
 
+class Circle {
+  constructor(radius, cameraStatic, useCulling) {
+    this.type = "circle";
+    this.radius = radius;
+    this.cameraStatic = cameraStatic;
+    this.useCulling = useCulling;
+  }
+}
+
 class Polygon {
 	constructor(tris, cameraStatic) {
 		this.type = "polygon";
@@ -85,7 +94,7 @@ class Tri {
 	}
 }
 
-var e = {
+const e = {
 	methods: {
 		setDimensions: null,
 		renderImage: null,
@@ -134,7 +143,7 @@ e.methods.setDimensions = (w, h) => {
 		e.data.element.width = w;
 		e.data.element.height = h;
 	}
-},
+};
 e.methods.renderImage = (vector, imageRenderer) => {
   if(imageRenderer.cameraStatic) {
     if(!imageRenderer.useCulling || (vector.x + (imageRenderer.w / 2) >= 0 && vector.x - (imageRenderer.w / 2) <= e.data.w && vector.y - (imageRenderer.h / 2) <= 0 && vector.y + (imageRenderer.h / 2) >= e.data.h * -1)) {
@@ -187,7 +196,7 @@ e.methods.renderImage = (vector, imageRenderer) => {
       e.data.cx.restore();
     }
   }
-},
+};
 e.methods.renderText = (vector, text, fillRenderer) => {
   if(text.cameraStatic) {
     if(!text.useCulling || (vector.x + (text.text.length * text.size) >= 0 && e.data.w >= vector.x && vector.y <= 0 && e.data.h * -1 <= vector.y + (text.size * 2))) {
@@ -214,17 +223,29 @@ e.methods.renderText = (vector, text, fillRenderer) => {
       e.data.cx.restore();
     }
   }
-},
-e.methods.renderCircle = function(vector, fillRenderer, borderRenderer) {
-  e.data.cx.globalAlpha = fillRenderer.alpha;
-  e.data.cx.beginPath();
-  e.data.cx.arc(vector.x, vector.y, vector.z, 0, 2 * Math.PI, false);
-  e.data.cx.fillStyle = fillRenderer.color1;
-  e.data.cx.fill();
-  e.data.cx.globalAlpha = fillRenderer.alpha;
-  e.data.cx.lineWidth = borderRenderer.lw;
-  e.data.cx.strokeStyle = borderRenderer.color;
-  e.data.cx.stroke();
+};
+e.methods.renderCircle = (vector, circle, fillRenderer, borderRenderer) => {
+  if(circle.cameraStatic) {
+    e.data.cx.globalAlpha = fillRenderer.alpha;
+    e.data.cx.beginPath();
+    e.data.cx.arc(vector.x, vector.y, circle.radius, 0, 2 * Math.PI, false);
+    e.data.cx.fillStyle = fillRenderer.color1;
+    e.data.cx.fill();
+    e.data.cx.globalAlpha = fillRenderer.alpha;
+    e.data.cx.lineWidth = borderRenderer.lw;
+    e.data.cx.strokeStyle = borderRenderer.color;
+    e.data.cx.stroke();
+  } else {
+    e.data.cx.globalAlpha = fillRenderer.alpha;
+    e.data.cx.beginPath();
+    e.data.cx.arc((vector.x - e.data.camera.x) / e.data.camera.zoom, (vector.y - e.data.camera.y) / e.data.camera.zoom, circle.radius / e.data.camera.zoom, 0, 2 * Math.PI, false);
+    e.data.cx.fillStyle = fillRenderer.color1;
+    e.data.cx.fill();
+    e.data.cx.globalAlpha = fillRenderer.alpha;
+    e.data.cx.lineWidth = borderRenderer.lw / e.data.camera.zoom;
+    e.data.cx.strokeStyle = borderRenderer.color;
+    e.data.cx.stroke();
+  }
 };
 e.methods.renderPolygon = (vector, polygon, fillRenderer, borderRenderer) => {
   if(polygon.cameraStatic) {
@@ -318,45 +339,42 @@ e.methods.renderPolygon = (vector, polygon, fillRenderer, borderRenderer) => {
   }
 };
 e.methods.calcDistance = (vector1, vector2) => {
-	return Math.sqrt(Math.pow(vector1.x - vector2.x, 2) + Math.pow(vector1.y - vector2.y, 2));
-},
+    return Math.sqrt(Math.pow(vector1.x - vector2.x, 2) + Math.pow(vector1.y - vector2.y, 2));
+};
 e.methods.randomNum = (limit1, limit2) => {
   if(limit1 < limit2) {
 	  return Math.floor((Math.random() * (Math.abs(limit1 - limit2) + 1)) + limit1);
   } else {
 	  return Math.floor((Math.random() * (Math.abs(limit2 - limit1) + 1)) + limit2);
   }
-},
+};
 e.methods.randomExp = (min, max, exp) => {
   return Math.round(Math.pow(e.methods.randomNum(min, Math.pow(max, exp)), 1 / exp));
 };
 e.methods.calcAngle = (vector1, vector2) => {
-  return Math.round(Math.atan2(vector1.y - vector2.y,  vector1.x - vector2.x) * 57.2958) + 180;
-},
+  return Math.round(Math.atan2(vector1.y - vector2.y, vector1.x - vector2.x) * 57.2958) + 180;
+};
 e.methods.calcRotationalVector2 = (angle, magnitude) => {
 	return new Vector2(Math.cos((angle) / 57.2958) * magnitude, Math.sin((angle) / 57.2958) * magnitude);
-},
+};
 e.methods.addVector = (vector1, vector2) => {
   if(vector1.type === "vector3") {
     if(vector2.type === "vector3") {
-      return new Vector33(vector1.x + vector2.x, vector1.y + vector2.y, vector1.r + vector2.r);
+      return new Vector3(vector1.x + vector2.x, vector1.y + vector2.y, vector1.r + vector2.r);
     } else {
-      return new Vector33(vector1.x + vector2.x, vector1.y + vector2.y, vector1.r);
+      return new Vector3(vector1.x + vector2.x, vector1.y + vector2.y, vector1.r);
     }
   } else {
-    return new Vector32(vector1.x + vector2.x, vector1.y + vector2.y);
+    return new Vector2(vector1.x + vector2.x, vector1.y + vector2.y);
   }
-  
 };
-e.methods.roundvector = (vector, decimalPlaces) => {
+e.methods.roundVector = (vector, decimalPlaces) => {
   if(vector.type === "vector3") {
     return new Vector3(Math.round(vector.x * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces), Math.round(vector.y * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces), Math.round(vector.z * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces));
   } else {
     return new Vector3(Math.round(vector.x * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces), Math.round(vector.y * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces));
   }
-  
 };
-
 e.methods.detectCollision = (vector1, polygon1, vector2, polygon2) => {
 	if(polygon1 === null) {
 		let tri = 0;
