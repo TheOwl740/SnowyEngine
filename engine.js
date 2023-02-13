@@ -1,8 +1,7 @@
 //jshint maxerr: 10000
 
 //CONSTRUCT DOCUMENT
-document.body.innerHTML = "<canvas id=\"canvas\" style=\"border: 1px solid black\"></canvas>" + document.body.innerHTML;
-document.head.innerHTML += "<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><style>canvas{margin:0;border:0;padding:0;}body{margin:0;overflow:hidden;}</style>";
+document.body.innerHTML = `<canvas id="canvas" style="border: 1px solid black"></canvas>${document.body.innerHTML}`, document.head.innerHTML += "<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><style>canvas{margin:0;border:0;padding:0;}body{margin:0;overflow:hidden;}</style>";
 
 class Vector2 {
   constructor(x, y) {
@@ -146,8 +145,7 @@ const e = {
         e.cx.translate(vector.x, vector.y * -1);
         e.cx.rotate(vector.z * (Math.PI / 180));
         e.cx.globalAlpha = fillRenderer.alpha;
-        e.cx.font = text.size + "px " + text.font;
-        e.cx.fillStyle = fillRenderer.color1;
+        [e.cx.font, e.cx.fillStyle] = [`${text.size}px ${text.font}`, fillRenderer.color1];
         e.cx.fillText(text.text, text.x, text.y);
         e.cx.restore();
       }
@@ -158,8 +156,7 @@ const e = {
         e.cx.translate((vector.x - e.camera.x) / e.camera.zoom, ((vector.y - e.camera.y) / e.camera.zoom) * -1);
         e.cx.rotate(vector.z * (Math.PI / 180));
         e.cx.globalAlpha = fillRenderer.alpha;
-        e.cx.font = (text.size / e.camera.zoom) + "px " + text.font;
-        e.cx.fillStyle = fillRenderer.color1;
+        [e.cx.font, e.cx.fillStyle] = [`${text.size / e.camera.zoom}px ${text.font}`, fillRenderer.color1];
         e.cx.fillText(text.text, text.x / e.camera.zoom, text.y / e.camera.zoom);
         e.cx.restore();
       }
@@ -172,8 +169,7 @@ const e = {
       e.cx.arc(vector.x, vector.y, circle.radius, 0, 2 * Math.PI, false);
       e.cx.fillStyle = fillRenderer.color1;
       e.cx.fill();
-      e.cx.globalAlpha = fillRenderer.alpha;
-      e.cx.lineWidth = borderRenderer.lw;
+      [e.cx.globalAlpha, e.cx.lineWidth] = [borderRenderer.alpha, borderRenderer.lw];
       e.cx.strokeStyle = borderRenderer.color;
       e.cx.stroke();
     } else {
@@ -182,8 +178,7 @@ const e = {
       e.cx.arc((vector.x - e.camera.x) / e.camera.zoom, (vector.y - e.camera.y) / e.camera.zoom, circle.radius / e.camera.zoom, 0, 2 * Math.PI, false);
       e.cx.fillStyle = fillRenderer.color1;
       e.cx.fill();
-      e.cx.globalAlpha = fillRenderer.alpha;
-      e.cx.lineWidth = borderRenderer.lw / e.camera.zoom;
+      [e.cx.globalAlpha, e.cx.lineWidth] = [borderRenderer.alpha, borderRenderer.lw / e.camera.zoom];
       e.cx.strokeStyle = borderRenderer.color;
       e.cx.stroke();
     }
@@ -205,13 +200,11 @@ const e = {
             e.cx.lineTo(polygon.tris[tri].points[point + 1].x, polygon.tris[tri].points[point + 1].y);
           }
           if(borderRenderer !== null) {
-            e.cx.globalAlpha = borderRenderer.alpha;
-            e.cx.lineWidth = borderRenderer.lw;
+            [e.cx.globalAlpha, e.cx.lineWidth] = [borderRenderer.alpha, borderRenderer.lw];
             e.cx.strokeStyle = borderRenderer.color;
             e.cx.stroke();
           } else {
-            e.cx.globalAlpha = 0;
-            e.cx.lineWidth = 0;
+            [e.cx.globalAlpha, e.cx.lineWidth] = [0, 0];
             e.cx.stroke();
           }
         }
@@ -222,13 +215,11 @@ const e = {
           } else {
             e.cx.lineTo(polygon.tris[tri].points[point + 1].x, polygon.tris[tri].points[point + 1].y);
           }
-          e.cx.globalAlpha = 0;
-          e.cx.lineWidth = 0;
+          [e.cx.globalAlpha, e.cx.lineWidth] = [0, 0];
           e.cx.stroke();
         }
         if(fillRenderer !== null) {
-          e.cx.globalAlpha = fillRenderer.alpha;
-          e.cx.fillStyle = fillRenderer.color1;
+          [e.cx.globalAlpha, e.cx.fillStyle] = [fillRenderer.alpha, fillRenderer.color1];
           e.cx.fill();
         }
       }
@@ -249,13 +240,11 @@ const e = {
             e.cx.lineTo(polygon.tris[tri].points[point + 1].x / e.camera.zoom, polygon.tris[tri].points[point + 1].y / e.camera.zoom);
           }
           if(borderRenderer !== null) {
-            e.cx.globalAlpha = borderRenderer.alpha;
-            e.cx.lineWidth = borderRenderer.lw / e.camera.zoom;
+            [e.cx.globalAlpha, e.cx.lineWidth] = [borderRenderer.alpha, borderRenderer.lw / e.camera.zoom];
             e.cx.strokeStyle = borderRenderer.color;
             e.cx.stroke();
           } else {
-            e.cx.globalAlpha = 0;
-            e.cx.lineWidth = 0;
+            [e.cx.globalAlpha, e.cx.lineWidth] = [0, 0];
             e.cx.stroke();
           }
         }
@@ -266,13 +255,11 @@ const e = {
           } else {
             e.cx.lineTo(polygon.tris[tri].points[point + 1].x / e.camera.zoom, polygon.tris[tri].points[point + 1].y / e.camera.zoom);
           }
-          e.cx.globalAlpha = 0;
-          e.cx.lineWidth = 0;
+          [e.cx.globalAlpha, e.cx.lineWidth] = [0, 0];
           e.cx.stroke();
         }
         if(fillRenderer !== null) {
-          e.cx.globalAlpha = fillRenderer.alpha;
-          e.cx.fillStyle = fillRenderer.color1;
+          [e.cx.globalAlpha, e.cx.fillStyle] = [fillRenderer.alpha, fillRenderer.color1];
           e.cx.fill();
         }
       }
