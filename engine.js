@@ -7,43 +7,31 @@ document.head.innerHTML += "<meta charset=\"utf-8\"><meta name=\"viewport\" cont
 class Vector2 {
   constructor(x, y) {
 	  this.type = "vector2";
-    this.x = x;
-    this.y = y;
+    [this.x, this.y] = [x, y];
   }
 }
 
 class Vector3 {
   constructor(x, y, z) {
 	  this.type = "vector3";
-    this.x = x;
-    this.y = y;
-    this.z = z;
+    [this.x, this.y, this.z] = [x, y, z];
   }
 }
 
 class FillRenderer {
 	constructor(color1, color2, alpha, dir) {
 		this.type = "fillRenderer";
-		this.color1 = color1;
-		this.color2 = color2;
-		this.dir = dir;
-		this.alpha = alpha;
+		[this.color1, this.color2] = [color1, color2];
+		[this.alpha, this.dir] = [alpha, dir];
 	}
 }
 
 class ImageRenderer {
 	constructor(image, alpha, x, y, w, h, hf, vf, cameraStatic, useCulling) {
 		this.type = "imageRenderer";
-		this.useCulling = useCulling;
-		this.cameraStatic = cameraStatic;
 		this.image = image;
-		this.x = x;
-		this.y = y;
-		this.w = w;
-		this.h = h;
-		this.hf = hf;
-		this.vf = vf;
-		this.alpha = alpha;
+		[this.alpha, this.x, this.y, this.w, this.h] = [alpha, x, y, w, h];
+		[this.hf, this.vf, this.cameraStatic, this.useCulling] = [hf, vf, cameraStatic, useCulling];
 	}
 }
 
@@ -51,21 +39,16 @@ class BorderRenderer {
 	constructor(color, alpha, lw) {
 		this.type = "borderRenderer";
 		this.color = color;
-		this.lw = lw;
-		this.alpha = alpha;
+		[this.alpha, this.lw] = [alpha, lw];
 	}
 }
 
 class Text {
-	constructor(font, text, size, x, y, cameraStatic, useCulling) {
+	constructor(font, text, x, y, size, cameraStatic, useCulling) {
 		this.type = "text";
-		this.useCulling = useCulling;
-		this.cameraStatic = cameraStatic;
-		this.text = text;
-		this.font = font;
-		this.x = x;
-		this.y = y;
-		this.size = size;
+		[this.font, this.text] = [font, text];
+		[this.x, this.y, this.size] = [x, y, size];
+		[this.cameraStatic, this.useCulling] = [cameraStatic, useCulling];
 	}
 }
 
@@ -73,39 +56,33 @@ class Circle {
   constructor(radius, cameraStatic, useCulling) {
     this.type = "circle";
     this.radius = radius;
-    this.cameraStatic = cameraStatic;
-    this.useCulling = useCulling;
+		[this.cameraStatic, this.useCulling] = [cameraStatic, useCulling];
   }
 }
 
 class Polygon {
-	constructor(tris, cameraStatic) {
+	constructor(tris, cameraStatic, useCulling) {
 		this.type = "polygon";
-		this.cameraStatic = cameraStatic;
 		this.tris = tris;
+		[this.cameraStatic, this.useCulling] = [cameraStatic, useCulling];
 	}
 }
 
 class Tri {
 	constructor(points, borders) {
 		this.type = "tri";
-		this.borders = borders;
 		this.points = points;
+		this.borders = borders;
 	}
 }
 
 const e = {
 	setDimensions: (w, h) => {
   	if(w === "full") {
-  		e.element.width = window.innerWidth;
-  		e.w = window.innerWidth;
-  		e.element.height = window.innerHeight;
-  		e.h = window.innerHeight;
+  		[e.element.width, e.element.height, e.w, e.h] = [window.innerWidth, window.innerHeight, window.innerWidth, window.innerHeight];
   	} else {
-  		e.w = w;
-  		e.h = h;
-  		e.element.width = w;
-  		e.element.height = h;
+  		[e.w, e.h] = [w, h];
+  		[e.element.width, e.element.height] = [w, h];
   	}
   },
 	renderImage: (vector, imageRenderer) => {
