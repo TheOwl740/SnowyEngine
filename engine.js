@@ -307,8 +307,7 @@ const e = {
   	if(polygon1 === null) {
   		let tri = 0;
   		for(tri = 0; tri < polygon2.tris.length; tri++) {
-  		  let angleTotal = 0;
-  			let point = 0;
+  		  let [angleTotal, point] = [0, 0];
   			for(point = 0; point < 3; point++) {
   				if(point < 2) {
             if(Math.abs(e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[point].x, vector2.y + polygon2.tris[tri].points[point].y)) - e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[point + 1].x, vector2.y + polygon2.tris[tri].points[point + 1].y))) > 180) {
@@ -344,8 +343,7 @@ const e = {
         for(testPoint = 0; testPoint < polygon1.tris[testTri].points.length; testPoint++) {
           let tri = 0;
           for(tri = 0; tri < polygon2.tris.length; tri++) {
-            let angleTotal = 0;
-            let point = 0;
+  		      let [angleTotal, point] = [0, 0];
             for(point = 0; point < 3; point++) {
               if(point < 2) {
                 if(Math.abs(e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[point].x, vector2.y + polygon2.tris[tri].points[point].y)) - e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[point + 1].x, vector2.y + polygon2.tris[tri].points[point + 1].y))) > 180) {
@@ -380,8 +378,7 @@ const e = {
         for(testPoint = 0; testPoint < polygon2.tris[testTri].points.length; testPoint++) {
           let tri = 0;
           for(tri = 0; tri < polygon1.tris.length; tri++) {
-            let angleTotal = 0;
-            let point = 0;
+  		      let [angleTotal, point] = [0, 0];
             for(point = 0; point < 3; point++) {
               if(point < 2) {
                 if(Math.abs(e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[point].x, vector1.y + polygon1.tris[tri].points[point].y)) - e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[point + 1].x, vector1.y + polygon1.tris[tri].points[point + 1].y))) > 180) {
@@ -447,10 +444,7 @@ document.addEventListener("keyup", (eObj) => {
 	e.pressedKeys.splice(e.pressedKeys.indexOf(eObj.key), 1);
 });
 document.addEventListener("mousemove", (eObj) => {
-	e.mouse.absolute.x = eObj.clientX;
-	e.mouse.absolute.y = eObj.clientY * -1;
-	e.mouse.dynamic.x = (eObj.clientX * e.camera.zoom) + e.camera.x;
-	e.mouse.dynamic.y = e.camera.y - (eObj.clientY * e.camera.zoom);
+	[e.mouse.absolute.x, e.mouse.absolute.y, e.mouse.dynamic.x, e.mouse.dynamic.y] = [eObj.clientX, eObj.clientY * -1, (eObj.clientX * e.camera.zoom) + e.camera.x, e.camera.y - (eObj.clientY * e.camera.zoom)];
 });
 document.addEventListener("mousedown", () => {
 	e.mouse.clicking = true;
@@ -460,8 +454,7 @@ document.addEventListener("mouseup", () => {
 });
 
 //SET FULL CANVAS DIMENSIONS
-e.element.width = window.innerWidth;
-e.element.height = window.innerHeight;
+[e.element.width, e.element.height] = [window.innerWidth, window.innerHeight];
 
 //RESCALE CANVAS TO PROPER Y
 e.cx.scale(1, -1);
