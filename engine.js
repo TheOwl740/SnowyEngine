@@ -416,6 +416,11 @@ const e = {
     e.cx.globalAlpha = 1;
     e.cx.fillRect(0, 0, e.w, e.h * -1);
   },
+  generateImage: (src) => {
+    const rv = new Image();
+    rv.src = src;
+    return rv;
+  },
 	w: window.innerWidth,
 	h: window.innerHeight,
 	element: document.getElementById("canvas"),
