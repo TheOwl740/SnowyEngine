@@ -1,528 +1,494 @@
 //jshint maxerr: 10000
 
-//CONSTRUCT DOCUMENT
-document.body.innerHTML = `<canvas id="canvas" style="border: 1px solid black"></canvas>${document.body.innerHTML}`, document.head.innerHTML += "<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><style>canvas{margin:0;border:0;padding:0;}body{margin:0;overflow:hidden;}</style>";
+//SNOWY GAME ENGINE
 
-class Vector2 {
+//PASSIVE CLASSES
+
+//canvas class
+class Canvas {
+  constructor(id) {
+    this.type = "canvas";
+    this.element = document.getElementById(id);
+    this.cx = this.element.getContext("2d");
+    [this.w, this.h] = [this.element.width, this.element.height];
+    this.cx.scale(1, -1);
+  }
+  //clears canvas with fill values
+  clear(fill) {
+    this.cx.fillStyle = fill.color;
+    this.cx.globalAlpha = 1;
+    this.cx.fillRect(0, 0, this.w, this.h * -1);
+  }
+  //sets canvas dimensions
+  setDimensions(w, h) {
+    [this.w, this.element.width, this.h, this.element.height] = [w, w, h, h];
+    this.cx.scale(1, -1);
+  }
+}
+
+//event tracker
+class EventTracker {
+  constructor() {
+    this.type = "eventTracker";
+    //access values
+    this.pressedKeys = [];
+    this.clicking = false;
+    this.cursor = new Pair(0, 0);
+    //listeners
+    document.addEventListener("keydown", (eObj) => {
+      if(!this.pressedKeys.includes(eObj.key)) {
+        this.pressedKeys.push(eObj.key);
+      }
+    });
+    document.addEventListener("keyup", (eObj) => {
+      this.pressedKeys.splice(this.pressedKeys.indexOf(eObj.key), 1);
+    });
+    document.addEventListener("mousemove", (eObj) => {
+      [this.cursor.x, this.cursor.y] = [eObj.clientX, eObj.clientY * -1];
+    });
+    document.addEventListener("mousedown", () => {
+      this.clicking = true;
+    });
+    document.addEventListener("mouseup", () => {
+      this.clicking = false;
+    });
+  }
+}
+
+//2d pair coordinate
+class Pair {
   constructor(x, y) {
-	  this.type = "vector2";
+	  this.type = "pair";
     [this.x, this.y] = [x, y];
   }
-}
-
-class Vector3 {
-  constructor(x, y, z) {
-	  this.type = "vector3";
-    [this.x, this.y, this.z] = [x, y, z];
+  //add another pair
+  add(pair) {
+    this.x += pair.x;
+    this.y += pair.y;
+  }
+  //multiply values by a number
+  multiply(value) {
+    this.x *= value;
+    this.y *= value;
+  }
+  //round values
+  round(precision) {
+    [this.x, this.y] = [Math.round(this.x * Math.pow(10, precision)) / Math.pow(10, precision), Math.round(this.y * Math.pow(10, precision)) / Math.pow(10, precision)];
+  }
+  //move coordinate in an angular direction
+  rotationalIncrease(angle, magnitude) {
+    this.x += Math.cos(angle / 57.2958) * magnitude;
+    this.y += Math.sin(angle / 57.2958) * magnitude;
   }
 }
 
-class FillRenderer {
-	constructor(color1, color2, alpha, dir) {
-		this.type = "fillRenderer";
-		[this.color1, this.color2] = [color1, color2];
-		[this.alpha, this.dir] = [alpha, dir];
-	}
+class Collider {
+  constructor(pair, module) {
+    //data
+    this.type = "collider";
+    this.pairs = [];
+    this.module = module;
+    //regenerate collider
+    const zeroedPair = new Pair(0, 0);
+    const tools = new Toolkit();
+    switch(this.module.type) {
+      case "shape":
+        this.module.pairs.forEach((arrayPair) => {
+          this.pairs.push(tools.addPairs(pair, tools.calcRotationalTranslate(tools.calcAngle(zeroedPair, arrayPair) + this.module.r, tools.calcDistance(zeroedPair, arrayPair))));
+          this.pairs[this.pairs.length - 1].round(2);
+        });
+        break;
+      case "rectangle":
+        const initialPairs = [
+          new Pair(this.module.w / -2, this.module.h / 2),
+          new Pair(this.module.w / 2, this.module.h / 2),
+          new Pair(this.module.w / 2, this.module.h / -2),
+          new Pair(this.module.w / -2, this.module.h / -2),
+        ];
+        initialPairs.forEach((arrayPair) => {
+          this.pairs.push(tools.addPairs(pair, tools.calcRotationalTranslate(tools.calcAngle(zeroedPair, arrayPair) + this.module.r, tools.calcDistance(zeroedPair, arrayPair))));
+        });
+        break;
+      case "circle":
+        let vertices = tools.roundNum((this.module.d / 5) + 5, 0);
+        for(let vertexIndex = 0; vertexIndex < vertices; vertexIndex++) {
+          this.pairs.push(tools.addPairs(pair, tools.calcRotationalTranslate((360 / vertices) * vertexIndex, this.module.d / 2)));
+        }
+        break;
+    }
+  }
 }
 
-class ImageRenderer {
-	constructor(image, alpha, x, y, w, h, r, hf, vf, cameraStatic, useCulling) {
-		this.type = "imageRenderer";
-		this.image = image;
-		[this.alpha, this.x, this.y, this.w, this.h, this.r] = [alpha, x, y, w, h, r];
-		[this.hf, this.vf, this.cameraStatic, this.useCulling] = [hf, vf, cameraStatic, useCulling];
-	}
-}
-
-class BorderRenderer {
-	constructor(color, alpha, lw) {
-		this.type = "borderRenderer";
+//fill data for rendering methods
+class Fill {
+	constructor(color, alpha) {
+		this.type = "fill";
 		this.color = color;
-		[this.alpha, this.lw] = [alpha, lw];
+		this.alpha = alpha;
 	}
 }
 
+//border data for renderers
+class Border {
+	constructor(color, alpha, w, corner) {
+		this.type = "border";
+		[this.color, this.corner] = [color, corner];
+		[this.alpha, this.w] = [alpha, w];
+	}
+}
+
+//image data for renderers
+class Img {
+	constructor(img, alpha, r, x, y, w, h, hf, vf) {
+		this.type = "img";
+		this.img = img;
+		[this.alpha, this.x, this.y, this.w, this.h, this.r] = [alpha, x, y, w, h, r];
+		[this.hf, this.vf] = [hf, vf];
+	}
+}
+
+//text data for renderers
 class Text {
-	constructor(font, text, x, y, size, cameraStatic, useCulling) {
+	constructor(font, text, r, size) {
 		this.type = "text";
 		[this.font, this.text] = [font, text];
-		[this.x, this.y, this.size] = [x, y, size];
-		[this.cameraStatic, this.useCulling] = [cameraStatic, useCulling];
+		[this.r, this.size] = [r, size];
 	}
 }
 
+//circle data for renderers
 class Circle {
-  constructor(radius, cameraStatic, useCulling) {
+  constructor(d) {
     this.type = "circle";
-    this.radius = radius;
-		[this.cameraStatic, this.useCulling] = [cameraStatic, useCulling];
+    this.d = d;
   }
 }
 
-class Polygon {
-	constructor(tris, cameraStatic, useCulling) {
-		this.type = "polygon";
-		this.tris = tris;
-		[this.cameraStatic, this.useCulling] = [cameraStatic, useCulling];
-	}
-}
-
-class Tri {
-	constructor(points, borders) {
-		this.type = "tri";
-		this.points = points;
-		this.borders = borders;
-	}
-}
-
-class SpriteRenderer {
-  constructor(image, rows, columns, alpha, x, y, w, h, r, hf, vf, cameraStatic, useCulling) {
-    this.type = "spriteRenderer";
-    this.image = image;
-    [this.SW, this.SH] = [image.naturalWidth / columns, image.naturalHeight / rows];
-		[this.alpha, this.x, this.y, this.w, this.h, this.r] = [alpha, x, y, w, h, r];
-		[this.hf, this.vf, this.cameraStatic, this.useCulling] = [hf, vf, cameraStatic, useCulling];
+//rectangle data for renderers
+class Rectangle {
+  constructor(r, w, h) {
+    this.type = "rectangle";
+    [this.r, this.w, this.h] = [r, w, h];
   }
 }
 
-const e = {
-	setDimensions: (w, h) => {
-  	if(w === "full") {
-  		[e.element.width, e.element.height, e.w, e.h] = [window.innerWidth, window.innerHeight, window.innerWidth, window.innerHeight];
-  	} else {
-  		[e.w, e.h] = [w, h];
-  		[e.element.width, e.element.height] = [w, h];
-  	}
-  },
-	renderImage: (vector, imageRenderer) => {
-    if(imageRenderer.cameraStatic) {
-      if(!imageRenderer.useCulling || (vector.x + (imageRenderer.w / 2) >= 0 && vector.x - (imageRenderer.w / 2) <= e.w && vector.y - (imageRenderer.h / 2) <= 0 && vector.y + (imageRenderer.h / 2) >= e.h * -1)) {
-        let fc = {
-        	x: 1,
-        	y: -1
-        };
-        e.cx.save();
-        if(imageRenderer.hf) {
-        	e.cx.scale(-1, 1);
-        	fc.x = -1;
-        } else {
-        	e.cx.scale(1, 1);
-        }
-        if(imageRenderer.vf) {
-        	e.cx.scale(1, 1);
-        	fc.y = 1;
-        } else {
-        	e.cx.scale(1, -1);
-        }
-        e.cx.globalAlpha = imageRenderer.alpha;
-        e.cx.translate(vector.x * fc.x, vector.y * fc.y);
-        e.cx.rotate(imageRenderer.r * fc.x * fc.y * (Math.PI / 180));
-        e.cx.drawImage(imageRenderer.image, (imageRenderer.x * fc.x) - (imageRenderer.w / 2), (imageRenderer.y * fc.y) - (imageRenderer.h / 2), imageRenderer.w, imageRenderer.h);
-        e.cx.restore();
-      }
-    } else {
-      if(!imageRenderer.useCulling || (vector.x + (imageRenderer.w / 2) >= e.camera.x && e.camera.x + (e.w * e.camera.zoom) >= vector.x - (imageRenderer.w / 2) && vector.y - (imageRenderer.h / 2) <= e.camera.y && e.camera.y - (e.h * e.camera.zoom) <= vector.y + (imageRenderer.h / 2))) {
-        let fc = {
-        	x: 1,
-        	y: -1
-        };
-        e.cx.save();
-        if(imageRenderer.hf) {
-        	e.cx.scale(-1, 1);
-        	fc.x = -1;
-        } else {
-        	e.cx.scale(1, 1);
-        }
-        if(imageRenderer.vf) {
-        	e.cx.scale(1, 1);
-        	fc.y = 1;
-        } else {
-        	e.cx.scale(1, -1);
-        }
-        e.cx.globalAlpha = imageRenderer.alpha;
-        e.cx.translate(((vector.x - e.camera.x) / e.camera.zoom) * fc.x, ((vector.y - e.camera.y) / e.camera.zoom) * fc.y);
-        e.cx.rotate(imageRenderer.r * fc.x * fc.y * (Math.PI / 180));
-        e.cx.drawImage(imageRenderer.image, ((imageRenderer.x / e.camera.zoom) * fc.x) - ((imageRenderer.w / e.camera.zoom) / 2), ((imageRenderer.y / e.camera.zoom) * fc.y) - ((imageRenderer.h / e.camera.zoom) / 2), imageRenderer.w / e.camera.zoom, imageRenderer.h / e.camera.zoom);
-        e.cx.restore();
-      }
+//shape data for renderers
+class Shape {
+	constructor(pairs, r) {
+		this.type = "shape";
+		this.pairs = pairs;
+		this.r = r;
+	}
+}
+
+//line data for renderers
+class Line {
+  constructor(pairs, r) {
+    this.type = "line";
+    this.pairs = pairs;
+    this.r = r;
+  }
+}
+
+//ACTIVE CLASSES
+
+//renderTool class
+class RenderTool {
+  constructor(canvas) {
+    this.type = "renderTool";
+    this.canvas = canvas;
+    this.camera = new Pair(0, 0);
+    this.zoom = 1;
+  }
+  //renders a circle
+  renderCircle(pair, circle, fill, border) {
+    //draw
+    this.canvas.cx.beginPath();
+    this.canvas.cx.arc((pair.x - this.camera.x) / this.zoom, (pair.y - this.camera.y) / this.zoom, (circle.d / 2) / this.zoom, 0, 2 * Math.PI, false);
+    //fill
+    if(fill !== null) {
+      this.canvas.cx.globalAlpha = fill.alpha;
+      this.canvas.cx.fillStyle = fill.color;
+      this.canvas.cx.fill();
     }
-  },
-  renderSprite: (vector, spriteRenderer, index) => {
-    if(spriteRenderer.cameraStatic) {
-      if(!spriteRenderer.useCulling || (vector.x + (spriteRenderer.w / 2) >= 0 && vector.x - (spriteRenderer.w / 2) <= e.w && vector.y - (spriteRenderer.h / 2) <= 0 && vector.y + (spriteRenderer.h / 2) >= e.h * -1)) {
-        let fc = {
-        	x: 1,
-        	y: -1
-        };
-        e.cx.save();
-        if(spriteRenderer.hf) {
-        	e.cx.scale(-1, 1);
-        	fc.x = -1;
-        } else {
-        	e.cx.scale(1, 1);
-        }
-        if(spriteRenderer.vf) {
-        	e.cx.scale(1, 1);
-        	fc.y = 1;
-        } else {
-        	e.cx.scale(1, -1);
-        }
-        e.cx.globalAlpha = spriteRenderer.alpha;
-        e.cx.translate(vector.x * fc.x, vector.y * fc.y);
-        e.cx.rotate(spriteRenderer.r * fc.x * fc.y * (Math.PI / 180));
-        e.cx.drawImage(spriteRenderer.image, index.x * spriteRenderer.SW, index.y * spriteRenderer.SH, spriteRenderer.SW, spriteRenderer.SH, (spriteRenderer.x * fc.x) - (spriteRenderer.w / 2), (spriteRenderer.y * fc.y) - (spriteRenderer.h / 2), spriteRenderer.w, spriteRenderer.h);
-        e.cx.restore();
-      }
-    } else {
-      if(!spriteRenderer.useCulling || (vector.x + (spriteRenderer.w / 2) >= e.camera.x && e.camera.x + (e.w * e.camera.zoom) >= vector.x - (spriteRenderer.w / 2) && vector.y - (spriteRenderer.h / 2) <= e.camera.y && e.camera.y - (e.h * e.camera.zoom) <= vector.y + (spriteRenderer.h / 2))) {
-        let fc = {
-        	x: 1,
-        	y: -1
-        };
-        e.cx.save();
-        if(spriteRenderer.hf) {
-        	e.cx.scale(-1, 1);
-        	fc.x = -1;
-        } else {
-        	e.cx.scale(1, 1);
-        }
-        if(spriteRenderer.vf) {
-        	e.cx.scale(1, 1);
-        	fc.y = 1;
-        } else {
-        	e.cx.scale(1, -1);
-        }
-        e.cx.globalAlpha = spriteRenderer.alpha;
-        e.cx.translate(((vector.x - e.camera.x) / e.camera.zoom) * fc.x, ((vector.y - e.camera.y) / e.camera.zoom) * fc.y);
-        e.cx.rotate(spriteRenderer.r * fc.x * fc.y * (Math.PI / 180));
-        e.cx.drawImage(spriteRenderer.image, index.x * spriteRenderer.SW, index.y * spriteRenderer.SH, spriteRenderer.SW, spriteRenderer.SH, ((spriteRenderer.x / e.camera.zoom) * fc.x) - ((spriteRenderer.w / e.camera.zoom) / 2), ((spriteRenderer.y / e.camera.zoom) * fc.y) - ((spriteRenderer.h / e.camera.zoom) / 2), spriteRenderer.w / e.camera.zoom, spriteRenderer.h / e.camera.zoom);
-        e.cx.restore();
-      }
+    //border
+    if(border !== null) {
+      [this.canvas.cx.globalAlpha, this.canvas.cx.lineWidth] = [border.alpha, border.w / this.zoom];
+      [this.canvas.cx.strokeStyle, this.canvas.cx.lineCap, this.canvas.cx.lineJoin] = [border.color, border.corner, border.corner];
+      this.canvas.cx.stroke();
     }
-  },
-	renderText: (vector, text, fillRenderer) => {
-    if(text.cameraStatic) {
-      if(!text.useCulling || (vector.x + (text.text.length * text.size) >= 0 && e.w >= vector.x && vector.y <= 0 && e.h * -1 <= vector.y + (text.size * 2))) {
-        e.cx.save();
-        e.cx.scale(1, -1);
-        e.cx.translate(vector.x, vector.y * -1);
-        e.cx.rotate(vector.z * (Math.PI / 180));
-        e.cx.globalAlpha = fillRenderer.alpha;
-        [e.cx.font, e.cx.fillStyle] = [`${text.size}px ${text.font}`, fillRenderer.color1];
-        e.cx.fillText(text.text, text.x, text.y);
-        e.cx.restore();
-      }
-    } else {
-      if(!text.useCulling || (vector.x + (text.text.length * text.size) >= e.camera.x && e.camera.x + (e.w * e.camera.zoom) >= vector.x && vector.y <= e.camera.y && e.camera.y - (e.h * e.camera.zoom) <= vector.y - (text.size * 2))) {
-        e.cx.save();
-        e.cx.scale(1, -1);
-        e.cx.translate((vector.x - e.camera.x) / e.camera.zoom, ((vector.y - e.camera.y) / e.camera.zoom) * -1);
-        e.cx.rotate(vector.z * (Math.PI / 180));
-        e.cx.globalAlpha = fillRenderer.alpha;
-        [e.cx.font, e.cx.fillStyle] = [`${text.size / e.camera.zoom}px ${text.font}`, fillRenderer.color1];
-        e.cx.fillText(text.text, text.x / e.camera.zoom, text.y / e.camera.zoom);
-        e.cx.restore();
-      }
+  }
+  //renders a rectangle
+  renderRectangle(pair, rectangle, fill, border) {
+    //save canvas position
+    this.canvas.cx.save();
+    //translate canvas to rectangle and rotate
+    this.canvas.cx.translate(pair.x, pair.y);
+    this.canvas.cx.rotate(rectangle.r * (Math.PI / 180));
+    //draw
+    this.canvas.cx.beginPath();
+    this.canvas.cx.rect((-1 * this.camera.x / this.zoom) - ((rectangle.w / this.zoom) / 2), (-1 * this.camera.y / this.zoom) - ((rectangle.h / this.zoom) / 2), rectangle.w / this.zoom, rectangle.h / this.zoom);
+    this.canvas.cx.fill();
+    //fill
+    if(fill !== null) {
+      this.canvas.cx.globalAlpha = fill.alpha;
+      this.canvas.cx.fillStyle = fill.color;
+      this.canvas.cx.fill();
     }
-  },
-	renderCircle: (vector, circle, fillRenderer, borderRenderer) => {
-    if(circle.cameraStatic) {
-      e.cx.globalAlpha = fillRenderer.alpha;
-      e.cx.beginPath();
-      e.cx.arc(vector.x, vector.y, circle.radius, 0, 2 * Math.PI, false);
-      e.cx.fillStyle = fillRenderer.color1;
-      e.cx.fill();
-      [e.cx.globalAlpha, e.cx.lineWidth] = [borderRenderer.alpha, borderRenderer.lw];
-      e.cx.strokeStyle = borderRenderer.color;
-      e.cx.stroke();
-    } else {
-      e.cx.globalAlpha = fillRenderer.alpha;
-      e.cx.beginPath();
-      e.cx.arc((vector.x - e.camera.x) / e.camera.zoom, (vector.y - e.camera.y) / e.camera.zoom, circle.radius / e.camera.zoom, 0, 2 * Math.PI, false);
-      e.cx.fillStyle = fillRenderer.color1;
-      e.cx.fill();
-      [e.cx.globalAlpha, e.cx.lineWidth] = [borderRenderer.alpha, borderRenderer.lw / e.camera.zoom];
-      e.cx.strokeStyle = borderRenderer.color;
-      e.cx.stroke();
+    //border
+    if(border !== null) {
+      [this.canvas.cx.globalAlpha, this.canvas.cx.lineWidth] = [border.alpha, border.w / this.zoom];
+      [this.canvas.cx.strokeStyle, this.canvas.cx.lineCap, this.canvas.cx.lineJoin] = [border.color, border.corner, border.corner];
+      this.canvas.cx.stroke();
     }
-  },
-	renderPolygon: (vector, polygon, fillRenderer, borderRenderer) => {
-    if(polygon.cameraStatic) {
-      e.cx.save();
-      e.cx.translate(vector.x, vector.y);
-      e.cx.rotate(vector.z * (Math.PI / 180));
-      let tri = 0;
-      for(tri = 0; tri < polygon.tris.length; tri++) {
-        e.cx.beginPath();
-        e.cx.moveTo(polygon.tris[tri].points[0].x, polygon.tris[tri].points[0].y);
-        let point = 0;
-        for(point = 0; point < polygon.tris[tri].borders; point++) {
-          if(point === 2) {
-            e.cx.lineTo(polygon.tris[tri].points[0].x, polygon.tris[tri].points[0].y);
-          } else {
-            e.cx.lineTo(polygon.tris[tri].points[point + 1].x, polygon.tris[tri].points[point + 1].y);
-          }
-          if(borderRenderer !== null) {
-            [e.cx.globalAlpha, e.cx.lineWidth] = [borderRenderer.alpha, borderRenderer.lw];
-            e.cx.strokeStyle = borderRenderer.color;
-            e.cx.stroke();
-          } else {
-            [e.cx.globalAlpha, e.cx.lineWidth] = [0, 0];
-            e.cx.stroke();
-          }
-        }
-        e.cx.beginPath();
-        for(point = 0; point < 3; point++) {
-          if(point === 2) {
-            e.cx.lineTo(polygon.tris[tri].points[0].x, polygon.tris[tri].points[0].y);
-          } else {
-            e.cx.lineTo(polygon.tris[tri].points[point + 1].x, polygon.tris[tri].points[point + 1].y);
-          }
-          [e.cx.globalAlpha, e.cx.lineWidth] = [0, 0];
-          e.cx.stroke();
-        }
-        if(fillRenderer !== null) {
-          [e.cx.globalAlpha, e.cx.fillStyle] = [fillRenderer.alpha, fillRenderer.color1];
-          e.cx.fill();
-        }
-      }
-      e.cx.restore();
-    } else {
-      e.cx.save();
-      e.cx.translate((vector.x - e.camera.x) / e.camera.zoom, (vector.y - e.camera.y) / e.camera.zoom);
-      e.cx.rotate(vector.z * (Math.PI / 180));
-      let tri = 0;
-      for(tri = 0; tri < polygon.tris.length; tri++) {
-        e.cx.beginPath();
-        e.cx.moveTo(polygon.tris[tri].points[0].x / e.camera.zoom, polygon.tris[tri].points[0].y / e.camera.zoom);
-        let point = 0;
-        for(point = 0; point < polygon.tris[tri].borders; point++) {
-          if(point === 2) {
-            e.cx.lineTo(polygon.tris[tri].points[0].x / e.camera.zoom, polygon.tris[tri].points[0].y / e.camera.zoom);
-          } else {
-            e.cx.lineTo(polygon.tris[tri].points[point + 1].x / e.camera.zoom, polygon.tris[tri].points[point + 1].y / e.camera.zoom);
-          }
-          if(borderRenderer !== null) {
-            [e.cx.globalAlpha, e.cx.lineWidth] = [borderRenderer.alpha, borderRenderer.lw / e.camera.zoom];
-            e.cx.strokeStyle = borderRenderer.color;
-            e.cx.stroke();
-          } else {
-            [e.cx.globalAlpha, e.cx.lineWidth] = [0, 0];
-            e.cx.stroke();
-          }
-        }
-        e.cx.beginPath();
-        for(point = 0; point < 3; point++) {
-          if(point === 2) {
-            e.cx.lineTo(polygon.tris[tri].points[0].x / e.camera.zoom, polygon.tris[tri].points[0].y / e.camera.zoom);
-          } else {
-            e.cx.lineTo(polygon.tris[tri].points[point + 1].x / e.camera.zoom, polygon.tris[tri].points[point + 1].y / e.camera.zoom);
-          }
-          [e.cx.globalAlpha, e.cx.lineWidth] = [0, 0];
-          e.cx.stroke();
-        }
-        if(fillRenderer !== null) {
-          [e.cx.globalAlpha, e.cx.fillStyle] = [fillRenderer.alpha, fillRenderer.color1];
-          e.cx.fill();
-        }
-      }
-      e.cx.restore();
+    //restore canvas to default position
+    this.canvas.cx.restore();
+  }
+  //renders a line
+  renderLine(pair, line, border) {
+    //save canvas position
+    this.canvas.cx.save();
+    //translate canvas to rectangle and rotate
+    this.canvas.cx.translate(pair.x, pair.y);
+    this.canvas.cx.rotate(line.r * (Math.PI / 180));
+    //draw line
+    this.canvas.cx.beginPath();
+    this.canvas.cx.moveTo(line.pairs[0].x, line.pairs[0].y);
+    line.pairs.forEach((linePair) => {
+      this.canvas.cx.lineTo(linePair.x, linePair.y);
+    });
+    //color
+    [this.canvas.cx.globalAlpha, this.canvas.cx.lineWidth] = [border.alpha, border.w / this.zoom];
+    [this.canvas.cx.strokeStyle, this.canvas.cx.lineCap, this.canvas.cx.lineJoin] = [border.color, border.corner, border.corner];
+    this.canvas.cx.stroke();
+    //restore canvas to default position
+    this.canvas.cx.restore();
+  }
+  //renders a shape
+  renderShape(pair, shape, fill, border) {
+    //save canvas position
+    this.canvas.cx.save();
+    //translate canvas to rectangle and rotate
+    this.canvas.cx.translate(pair.x, pair.y);
+    this.canvas.cx.rotate(shape.r * (Math.PI / 180));
+    //draw line
+    this.canvas.cx.beginPath();
+    this.canvas.cx.moveTo(shape.pairs[0].x, shape.pairs[0].y);
+    shape.pairs.forEach((shapePair) => {
+      this.canvas.cx.lineTo(shapePair.x, shapePair.y);
+    });
+    this.canvas.cx.closePath();
+    //fill
+    if(fill !== null) {
+      this.canvas.cx.globalAlpha = fill.alpha;
+      this.canvas.cx.fillStyle = fill.color;
+      this.canvas.cx.fill();
     }
-  },
-	calcDistance: (vector1, vector2) => {
-    return Math.sqrt(Math.pow(vector1.x - vector2.x, 2) + Math.pow(vector1.y - vector2.y, 2));
-  },
-	randomNum: (limit1, limit2) => {
+    //border
+    if(border !== null) {
+      [this.canvas.cx.globalAlpha, this.canvas.cx.lineWidth] = [border.alpha, border.w / this.zoom];
+      [this.canvas.cx.strokeStyle, this.canvas.cx.lineCap, this.canvas.cx.lineJoin] = [border.color, border.corner, border.corner];
+      this.canvas.cx.stroke();
+    }
+    //restore canvas to default position
+    this.canvas.cx.restore();
+  }
+  //renders an image
+  renderImage(pair, img) {
+    //prepare canvas scaling and flipping
+    const fc = {
+    	x: 1,
+    	y: -1
+    };
+    this.canvas.cx.save();
+    if(img.hf) {
+      this.canvas.cx.scale(-1, 1);
+      fc.x = -1;
+    } else {
+      this.canvas.cx.scale(1, 1);
+    }
+    if(img.vf) {
+      this.canvas.cx.scale(1, 1);
+      fc.y = 1;
+    } else {
+      this.canvas.cx.scale(1, -1);
+    }
+    this.canvas.cx.globalAlpha = img.alpha;
+    this.canvas.cx.translate(((pair.x - this.camera.x) / this.zoom) * fc.x, ((pair.y - this.camera.y) / this.zoom) * fc.y);
+    this.canvas.cx.rotate(img.r * fc.x * fc.y * (Math.PI / 180));
+    //draw
+    this.canvas.cx.drawImage(img.img, ((img.x / this.zoom) * fc.x) - ((img.w / this.zoom) / 2), ((img.y / this.zoom) * fc.y) - ((img.h / this.zoom) / 2), img.w / this.zoom, img.h / this.zoom);
+    //restore canvas
+    this.canvas.cx.restore();
+  }
+  //render text
+  renderText(pair, text, fill) {
+    this.canvas.cx.save();
+    this.canvas.cx.scale(1, -1);
+    this.canvas.cx.translate(pair.x, pair.y * -1);
+    this.canvas.cx.rotate(text.r * (Math.PI / 180));
+    this.canvas.cx.globalAlpha = fill.alpha;
+    [this.canvas.cx.font, this.canvas.cx.fillStyle] = [`${text.size / this.zoom}px ${text.font}`, fill.color];
+    this.canvas.cx.fillText(text.text, (-1 * this.camera.x / this.zoom), (-1 * this.camera.y / this.zoom));
+    this.canvas.cx.restore();
+  }
+}
+
+//toolkit class
+class Toolkit {
+  constructor() {
+    this.type = "toolkit";
+  }
+  //generates an image object
+  generateImage(src) {
+    const holdingObject = new Image();
+    holdingObject.src = src;
+    return holdingObject;
+  }
+  //calculates distance between pairs
+  calcDistance(pair1, pair2) {
+    return Math.sqrt(Math.pow(pair1.x - pair2.x, 2) + Math.pow(pair1.y - pair2.y, 2));
+  }
+  //generates random ints
+  randomNum(limit1, limit2) {
     if(limit1 < limit2) {
-  	  return Math.floor((Math.random() * (Math.abs(limit1 - limit2) + 1)) + limit1);
+      return Math.floor((Math.random() * (Math.abs(limit1 - limit2) + 1)) + limit1);
     } else {
-  	  return Math.floor((Math.random() * (Math.abs(limit2 - limit1) + 1)) + limit2);
+      return Math.floor((Math.random() * (Math.abs(limit2 - limit1) + 1)) + limit2);
     }
-  },
-  randomExp: (min, max, exp) => {
-    return Math.round(Math.pow(e.randomNum(min, Math.pow(max, exp)), 1 / exp));
-  },
-	calcAngle: (vector1, vector2) => {
-    return Math.round(Math.atan2(vector1.y - vector2.y, vector1.x - vector2.x) * 57.2958) + 180;
-  },
-	calcRotationalVector2: (angle, magnitude) => {
-  	return new Vector2(Math.cos((angle) / 57.2958) * magnitude, Math.sin((angle) / 57.2958) * magnitude);
-  },
-  addVector: (vector1, vector2) => {
-    if(vector1.type === "vector3") {
-      if(vector2.type === "vector3") {
-        return new Vector3(vector1.x + vector2.x, vector1.y + vector2.y, vector1.r + vector2.r);
+  }
+  //rounds values
+  roundNum(value, precision) {
+    return Math.round(value * Math.pow(10, precision)) / Math.pow(10, precision);
+  }
+  //calculates the direction from pairs 1 to 2
+  calcAngle(pair1, pair2) {
+    return Math.round(Math.atan2(pair1.y - pair2.y, pair1.x - pair2.x) * 57.2958) + 180;
+  }
+  //adds pairs and returns product without mutating them
+  addPairs(pair1, pair2) {
+    return new Pair(pair1.x + pair2.x, pair1.y + pair2.y);
+  }
+  //generates a pair which can be added to another to translate it in a direction
+  calcRotationalTranslate(angle, magnitude) {
+    return new Pair(Math.cos(angle / 57.2958) * magnitude, Math.sin(angle / 57.2958) * magnitude);
+  }
+  //detect collisions
+  detectCollision(collider1, collider2) {
+    //data
+    let lastPoint;
+    let passthroughs;
+    let collided = false;
+    const testPoints = [];
+    
+    //point collisons
+    if(collider1.type === "pair") {
+      //set last to end
+      lastPoint = collider2.pairs[collider2.pairs.length - 1];
+      //cycle to find sets of pairs on either side of point
+      collider2.pairs.forEach((pair) => {
+        if(lastPoint.x < collider1.x && collider1.x < pair.x) {
+          testPoints.push([
+            lastPoint,
+            pair
+          ]);
+        }
+        if(pair.x < collider1.x && collider1.x < lastPoint.x) {
+          testPoints.push([
+            pair,
+            lastPoint
+          ]);
+        }
+        lastPoint = pair;
+      });
+      //test for passthroughs
+      passthroughs = 0;
+      testPoints.forEach((pairSet) => {
+        //calculate passthroughs
+        if(((collider1.x - pairSet[0].x) * (pairSet[1].y - pairSet[0].y) / (pairSet[1].x - pairSet[0].x)) + pairSet[0].y > collider1.y) {
+          passthroughs++;
+        }
+      });
+      //return answer
+      if(passthroughs % 2 === 0) {
+        return false;
       } else {
-        return new Vector3(vector1.x + vector2.x, vector1.y + vector2.y, vector1.r);
+        return true;
       }
+    //shape collisions
     } else {
-      return new Vector2(vector1.x + vector2.x, vector1.y + vector2.y);
-    }
-  },
-	roundVector: (vector, decimalPlaces) => {
-    if(vector.type === "vector3") {
-      return new Vector3(Math.round(vector.x * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces), Math.round(vector.y * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces), Math.round(vector.z * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces));
-    } else {
-      return new Vector2(Math.round(vector.x * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces), Math.round(vector.y * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces));
-    }
-  },
-	detectCollision: (vector1, polygon1, vector2, polygon2) => {
-  	if(polygon1 === null) {
-  		let tri = 0;
-  		for(tri = 0; tri < polygon2.tris.length; tri++) {
-  		  let [angleTotal, point] = [0, 0];
-  			for(point = 0; point < 3; point++) {
-  				if(point < 2) {
-            if(Math.abs(e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[point].x, vector2.y + polygon2.tris[tri].points[point].y)) - e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[point + 1].x, vector2.y + polygon2.tris[tri].points[point + 1].y))) > 180) {
-              if(e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[point].x, vector2.y + polygon2.tris[tri].points[point].y)) < 180) {
-                angleTotal += Math.abs((e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[point].x, vector2.y + polygon2.tris[tri].points[point].y)) + 360) - e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[point + 1].x, vector2.y + polygon2.tris[tri].points[point + 1].y)));
-              } else {
-                angleTotal += Math.abs(e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[point].x, vector2.y + polygon2.tris[tri].points[point].y)) - (e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[point + 1].x, vector2.y + polygon2.tris[tri].points[point + 1].y)) + 360));
-              }
-            } else {
-              angleTotal += Math.abs(e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[point].x, vector2.y + polygon2.tris[tri].points[point].y)) - e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[point + 1].x, vector2.y + polygon2.tris[tri].points[point + 1].y)));
-            }
-  				} else {
-            if(Math.abs(e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[2].x, vector2.y + polygon2.tris[tri].points[2].y)) - e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[0].x, vector2.y + polygon2.tris[tri].points[0].y))) > 180) {
-              if(e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[2].x, vector2.y + polygon2.tris[tri].points[2].y)) < 180) {
-                angleTotal += Math.abs((e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[2].x, vector2.y + polygon2.tris[tri].points[2].y)) + 360) - e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[0].x, vector2.y + polygon2.tris[tri].points[0].y)));
-              } else {
-                angleTotal += Math.abs(e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[2].x, vector2.y + polygon2.tris[tri].points[2].y)) - (e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[0].x, vector2.y + polygon2.tris[tri].points[0].y)) + 360));
-              }
-            } else {
-              angleTotal += Math.abs(e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[2].x, vector2.y + polygon2.tris[tri].points[2].y)) - e.calcAngle(vector1, new Vector2(vector2.x + polygon2.tris[tri].points[0].x, vector2.y + polygon2.tris[tri].points[0].y)));
-            }
+      //cycle each point in collider1 through detector
+      collider1.pairs.forEach((testPair) => {
+        //set last to end
+        lastPoint = collider2.pairs[collider2.pairs.length - 1];
+        //cycle to find sets of pairs on either side of point
+        testPoints.splice(0, testPoints.length);
+        collider2.pairs.forEach((pair) => {
+          if(lastPoint.x < testPair.x && testPair.x < pair.x) {
+            testPoints.push([
+              lastPoint,
+              pair
+            ]);
           }
-  			}
-  			if(angleTotal === 360) {
-          return true;
-  		  }
-  		}
-  		return false;
-  	} else {
-      let testTri = 0;
-      for(testTri = 0; testTri < polygon1.tris.length; testTri++) {
-        let testPoint = 0;
-        for(testPoint = 0; testPoint < polygon1.tris[testTri].points.length; testPoint++) {
-          let tri = 0;
-          for(tri = 0; tri < polygon2.tris.length; tri++) {
-  		      let [angleTotal, point] = [0, 0];
-            for(point = 0; point < 3; point++) {
-              if(point < 2) {
-                if(Math.abs(e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[point].x, vector2.y + polygon2.tris[tri].points[point].y)) - e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[point + 1].x, vector2.y + polygon2.tris[tri].points[point + 1].y))) > 180) {
-                  if(e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[point].x, vector2.y + polygon2.tris[tri].points[point].y)) < 180) {
-                    angleTotal += Math.abs((e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[point].x, vector2.y + polygon2.tris[tri].points[point].y)) + 360) - e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[point + 1].x, vector2.y + polygon2.tris[tri].points[point + 1].y)));
-                  } else {
-                    angleTotal += Math.abs(e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[point].x, vector2.y + polygon2.tris[tri].points[point].y)) - (e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[point + 1].x, vector2.y + polygon2.tris[tri].points[point + 1].y)) + 360));
-                  }
-                } else {
-                  angleTotal += Math.abs(e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[point].x, vector2.y + polygon2.tris[tri].points[point].y)) - e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[point + 1].x, vector2.y + polygon2.tris[tri].points[point + 1].y)));
-                }
-      				} else {
-                if(Math.abs(e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[2].x, vector2.y + polygon2.tris[tri].points[2].y)) - e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[0].x, vector2.y + polygon2.tris[tri].points[0].y))) > 180) {
-                  if(e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[2].x, vector2.y + polygon2.tris[tri].points[2].y)) < 180) {
-                    angleTotal += Math.abs((e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[2].x, vector2.y + polygon2.tris[tri].points[2].y)) + 360) - e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[0].x, vector2.y + polygon2.tris[tri].points[0].y)));
-                  } else {
-                    angleTotal += Math.abs(e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[2].x, vector2.y + polygon2.tris[tri].points[2].y)) - (e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[0].x, vector2.y + polygon2.tris[tri].points[0].y)) + 360));
-                  }
-                } else {
-                  angleTotal += Math.abs(e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[2].x, vector2.y + polygon2.tris[tri].points[2].y)) - e.calcAngle(new Vector2(vector1.x + polygon1.tris[testTri].points[testPoint].x, vector1.y + polygon1.tris[testTri].points[testPoint].y), new Vector2(vector2.x + polygon2.tris[tri].points[0].x, vector2.y + polygon2.tris[tri].points[0].y)));
-                }
-              }
-            }
-            if(angleTotal === 360) {
-              return true;
-            }
+          if(pair.x < testPair.x && testPair.x < lastPoint.x) {
+            testPoints.push([
+              pair,
+              lastPoint
+            ]);
           }
+          lastPoint = pair;
+        });
+        //test for passthroughs
+        passthroughs = 0;
+        testPoints.forEach((pairSet) => {
+          //calculate passthroughs
+          if(((testPair.x - pairSet[0].x) * (pairSet[1].y - pairSet[0].y) / (pairSet[1].x - pairSet[0].x)) + pairSet[0].y > testPair.y) {
+            passthroughs++;
+          }
+        });
+        //return answer
+        if(passthroughs % 2 !== 0) {
+          collided = true;
         }
+      });
+      if(collided) {
+        return collided;
       }
-      for(testTri = 0; testTri < polygon2.tris.length; testTri++) {
-        let testPoint = 0;
-        for(testPoint = 0; testPoint < polygon2.tris[testTri].points.length; testPoint++) {
-          let tri = 0;
-          for(tri = 0; tri < polygon1.tris.length; tri++) {
-  		      let [angleTotal, point] = [0, 0];
-            for(point = 0; point < 3; point++) {
-              if(point < 2) {
-                if(Math.abs(e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[point].x, vector1.y + polygon1.tris[tri].points[point].y)) - e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[point + 1].x, vector1.y + polygon1.tris[tri].points[point + 1].y))) > 180) {
-                  if(e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[point].x, vector1.y + polygon1.tris[tri].points[point].y)) < 180) {
-                    angleTotal += Math.abs((e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[point].x, vector1.y + polygon1.tris[tri].points[point].y)) + 360) - e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[point + 1].x, vector1.y + polygon1.tris[tri].points[point + 1].y)));
-                  } else {
-                    angleTotal += Math.abs(e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[point].x, vector1.y + polygon1.tris[tri].points[point].y)) - (e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[point + 1].x, vector1.y + polygon1.tris[tri].points[point + 1].y)) + 360));
-                  }
-                } else {
-                  angleTotal += Math.abs(e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[point].x, vector1.y + polygon1.tris[tri].points[point].y)) - e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[point + 1].x, vector1.y + polygon1.tris[tri].points[point + 1].y)));
-                }
-      				} else {
-                if(Math.abs(e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[2].x, vector1.y + polygon1.tris[tri].points[2].y)) - e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[0].x, vector1.y + polygon1.tris[tri].points[0].y))) > 180) {
-                  if(e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[2].x, vector1.y + polygon1.tris[tri].points[2].y)) < 180) {
-                    angleTotal += Math.abs((e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[2].x, vector1.y + polygon1.tris[tri].points[2].y)) + 360) - e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[0].x, vector1.y + polygon1.tris[tri].points[0].y)));
-                  } else {
-                    angleTotal += Math.abs(e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[2].x, vector1.y + polygon1.tris[tri].points[2].y)) - (e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[0].x, vector1.y + polygon1.tris[tri].points[0].y)) + 360));
-                  }
-                } else {
-                  angleTotal += Math.abs(e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[2].x, vector1.y + polygon1.tris[tri].points[2].y)) - e.calcAngle(new Vector2(vector2.x + polygon2.tris[testTri].points[testPoint].x, vector2.y + polygon2.tris[testTri].points[testPoint].y), new Vector2(vector1.x + polygon1.tris[tri].points[0].x, vector1.y + polygon1.tris[tri].points[0].y)));
-                }
-              }
-            }
-            if(angleTotal === 360) {
-              return true;
-            }
+      //cycle each point in collider2 through detector
+      collider2.pairs.forEach((testPair) => {
+        //set last to end
+        lastPoint = collider1.pairs[collider1.pairs.length - 1];
+        //cycle to find sets of pairs on either side of point
+        testPoints.splice(0, testPoints.length);
+        collider1.pairs.forEach((pair) => {
+          if(lastPoint.x < testPair.x && testPair.x < pair.x) {
+            testPoints.push([
+              lastPoint,
+              pair
+            ]);
           }
+          if(pair.x < testPair.x && testPair.x < lastPoint.x) {
+            testPoints.push([
+              pair,
+              lastPoint
+            ]);
+          }
+          lastPoint = pair;
+        });
+        //test for passthroughs
+        passthroughs = 0;
+        testPoints.forEach((pairSet) => {
+          //calculate passthroughs
+          if(((testPair.x - pairSet[0].x) * (pairSet[1].y - pairSet[0].y) / (pairSet[1].x - pairSet[0].x)) + pairSet[0].y > testPair.y) {
+            passthroughs++;
+          }
+        });
+        //return answer
+        if(passthroughs % 2 !== 0) {
+          collided = true;
         }
-      }
-      return false;
-  	}
-  },
-	clearCanvas: (fillRenderer) => {
-    e.cx.fillStyle = fillRenderer.color1;
-    e.cx.globalAlpha = 1;
-    e.cx.fillRect(0, 0, e.w, e.h * -1);
-  },
-  generateImage: (src) => {
-    const rv = new Image();
-    rv.src = src;
-    return rv;
-  },
-	w: window.innerWidth,
-	h: window.innerHeight,
-	element: document.getElementById("canvas"),
-	cx: document.getElementById("canvas").getContext("2d"),
-	mouse: {
-		absolute: new Vector3(0, 0, 0),
-		dynamic: new Vector3(0, 0, 0),
-		clicking: false
-	},
-	pressedKeys: [
-	],
-	camera: {
-		x: 0,
-		y: 0,
-		zoom: 1
-	}
-};
-
-//ADD EVENT LISTENERS
-document.addEventListener("keydown", (eObj) => {
-	if(!e.pressedKeys.includes(eObj.key)) {
-		e.pressedKeys.push(eObj.key);
-	}
-});
-document.addEventListener("keyup", (eObj) => {
-	e.pressedKeys.splice(e.pressedKeys.indexOf(eObj.key), 1);
-});
-document.addEventListener("mousemove", (eObj) => {
-	[e.mouse.absolute.x, e.mouse.absolute.y, e.mouse.dynamic.x, e.mouse.dynamic.y] = [eObj.clientX, eObj.clientY * -1, (eObj.clientX * e.camera.zoom) + e.camera.x, e.camera.y - (eObj.clientY * e.camera.zoom)];
-});
-document.addEventListener("mousedown", () => {
-	e.mouse.clicking = true;
-});
-document.addEventListener("mouseup", () => {
-	e.mouse.clicking = false;
-});
-
-//SET FULL CANVAS DIMENSIONS
-[e.element.width, e.element.height] = [window.innerWidth, window.innerHeight];
-
-//RESCALE CANVAS TO PROPER Y
-e.cx.scale(1, -1);
+      });
+      return collided;
+    }
+  }
+}
