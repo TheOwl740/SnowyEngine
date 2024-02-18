@@ -14,9 +14,9 @@ class Canvas {
     this.cx.scale(1, -1);
   }
   //clears canvas with fill values
-  clear(fill) {
+  fillAll(fill) {
     this.cx.fillStyle = fill.color;
-    this.cx.globalAlpha = 1;
+    this.cx.globalAlpha = fill.alpha;
     this.cx.fillRect(0, 0, this.w, this.h * -1);
   }
   //sets canvas dimensions
@@ -269,7 +269,7 @@ class RenderTool {
     //save canvas position
     this.canvas.cx.save();
     //translate canvas to rectangle and rotate
-    this.canvas.cx.translate(pair.x, pair.y);
+    this.canvas.cx.translate(pair.x - this.camera.x, pair.y - this.camera.y);
     this.canvas.cx.rotate(shape.r * (Math.PI / 180));
     //draw line
     this.canvas.cx.beginPath();
