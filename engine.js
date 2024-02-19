@@ -26,6 +26,33 @@ class Canvas {
   }
 }
 
+//2d pair coordinate
+class Pair {
+  constructor(x, y) {
+	  this.type = "pair";
+    [this.x, this.y] = [x, y];
+  }
+  //add another pair
+  add(pair) {
+    this.x += pair.x;
+    this.y += pair.y;
+  }
+  //multiply values by a number
+  multiply(value) {
+    this.x *= value;
+    this.y *= value;
+  }
+  //round values
+  round(precision) {
+    [this.x, this.y] = [Math.round(this.x * Math.pow(10, precision)) / Math.pow(10, precision), Math.round(this.y * Math.pow(10, precision)) / Math.pow(10, precision)];
+  }
+  //move coordinate in an angular direction
+  rotationalIncrease(angle, magnitude) {
+    this.x += Math.cos(angle / 57.2958) * magnitude;
+    this.y += Math.sin(angle / 57.2958) * magnitude;
+  }
+}
+
 //event tracker
 class EventTracker {
   constructor() {
@@ -53,32 +80,9 @@ class EventTracker {
       this.clicking = false;
     });
   }
-}
-
-//2d pair coordinate
-class Pair {
-  constructor(x, y) {
-	  this.type = "pair";
-    [this.x, this.y] = [x, y];
-  }
-  //add another pair
-  add(pair) {
-    this.x += pair.x;
-    this.y += pair.y;
-  }
-  //multiply values by a number
-  multiply(value) {
-    this.x *= value;
-    this.y *= value;
-  }
-  //round values
-  round(precision) {
-    [this.x, this.y] = [Math.round(this.x * Math.pow(10, precision)) / Math.pow(10, precision), Math.round(this.y * Math.pow(10, precision)) / Math.pow(10, precision)];
-  }
-  //move coordinate in an angular direction
-  rotationalIncrease(angle, magnitude) {
-    this.x += Math.cos(angle / 57.2958) * magnitude;
-    this.y += Math.sin(angle / 57.2958) * magnitude;
+  //query dynamic cursor position
+  dCursor(renderTool) {
+    return new Pair(this.cursor.x + renderTool.camera.x, this.cursor.y + renderTool.camera.y);
   }
 }
 
