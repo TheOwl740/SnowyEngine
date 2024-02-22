@@ -59,7 +59,8 @@ class EventTracker {
     this.type = "eventTracker";
     //access values
     this.pressedKeys = [];
-    this.clicking = false;
+    this.pressedButtons = [];
+    this.cursorDevice = null;
     this.cursor = new Pair(0, 0);
     //listeners
     document.addEventListener("keydown", (eObj) => {
@@ -73,16 +74,40 @@ class EventTracker {
     document.addEventListener("mousemove", (eObj) => {
       [this.cursor.x, this.cursor.y] = [eObj.clientX, eObj.clientY * -1];
     });
-    document.addEventListener("mousedown", () => {
-      this.clicking = true;
+    document.addEventListener("mousedown", (e) => {
+      this.pressedButtons.push(e.button);
     });
-    document.addEventListener("mouseup", () => {
-      this.clicking = false;
+    document.addEventListener("mouseup", (e) => {
+      this.pressedButtons.splice(this.pressedButtons.indexOf(e.key), 1);
     });
   }
   //query dynamic cursor position
   dCursor(renderTool) {
     return new Pair(this.cursor.x + renderTool.camera.x, this.cursor.y + renderTool.camera.y);
+  }
+  //disable context menu
+  disableRightClick() {
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+    });
+  }
+  //get key presses
+  getKey(name) {
+    return this.pressedKeys.includes(name);
+  }
+  getClick(button) {
+    switch(button) {
+      case "left":
+        return this.pressedButtons.includes(0);
+      case "center":
+        return this.pressedButtons.includes(1);
+      case "right":
+        return this.pressedButtons.includes(2);
+      case "aux1":
+        return this.pressedButtons.includes(3);
+      case "aux2":
+        return this.pressedButtons.includes(4);
+    }
   }
 }
 
@@ -232,7 +257,6 @@ class RenderTool {
     //draw
     this.canvas.cx.beginPath();
     this.canvas.cx.rect((-1 * this.camera.x / this.zoom) - ((rectangle.w / this.zoom) / 2), (-1 * this.camera.y / this.zoom) - ((rectangle.h / this.zoom) / 2), rectangle.w / this.zoom, rectangle.h / this.zoom);
-    this.canvas.cx.fill();
     //fill
     if(fill !== null) {
       this.canvas.cx.globalAlpha = fill.alpha;
@@ -333,7 +357,7 @@ class RenderTool {
     this.canvas.cx.rotate(text.r * (Math.PI / 180));
     this.canvas.cx.globalAlpha = fill.alpha;
     [this.canvas.cx.font, this.canvas.cx.fillStyle] = [`${text.size / this.zoom}px ${text.font}`, fill.color];
-    this.canvas.cx.fillText(text.text, (-1 * this.camera.x / this.zoom), (-1 * this.camera.y / this.zoom));
+    this.canvas.cx.fillText(text.text, (-1 * this.camera.x / this.zoom), (this.camera.y / this.zoom));
     this.canvas.cx.restore();
   }
 }
