@@ -60,7 +60,6 @@ class EventTracker {
     //access values
     this.pressedKeys = [];
     this.pressedButtons = [];
-    this.cursorDevice = null;
     this.cursor = new Pair(0, 0);
     //listeners
     document.addEventListener("keydown", (eObj) => {
@@ -95,6 +94,7 @@ class EventTracker {
   getKey(name) {
     return this.pressedKeys.includes(name);
   }
+  //get mouse presses
   getClick(button) {
     switch(button) {
       case "left":
