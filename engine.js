@@ -36,20 +36,30 @@ class Pair {
   add(pair) {
     this.x += pair.x;
     this.y += pair.y;
+    return this;
+  }
+  //subtract another pair
+  subtract(pair) {
+    this.x -= pair.x;
+    this.y -= pair.y;
+    return this;
   }
   //multiply values by a number
   multiply(value) {
     this.x *= value;
     this.y *= value;
+    return this;
   }
   //round values
   round(precision) {
     [this.x, this.y] = [Math.round(this.x * Math.pow(10, precision)) / Math.pow(10, precision), Math.round(this.y * Math.pow(10, precision)) / Math.pow(10, precision)];
+    return this;
   }
   //move coordinate in an angular direction
   rotationalIncrease(angle, magnitude) {
     this.x += Math.cos(angle / 57.2958) * magnitude;
     this.y += Math.sin(angle / 57.2958) * magnitude;
+    return this;
   }
 }
 
