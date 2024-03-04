@@ -262,11 +262,11 @@ class RenderTool {
     //save canvas position
     this.canvas.cx.save();
     //translate canvas to rectangle and rotate
-    this.canvas.cx.translate(pair.x, pair.y);
+    this.canvas.cx.translate(pair.x - this.camera.x, pair.y - this.camera.y);
     this.canvas.cx.rotate(rectangle.r * (Math.PI / 180));
     //draw
     this.canvas.cx.beginPath();
-    this.canvas.cx.rect((-1 * this.camera.x / this.zoom) - ((rectangle.w / this.zoom) / 2), (-1 * this.camera.y / this.zoom) - ((rectangle.h / this.zoom) / 2), rectangle.w / this.zoom, rectangle.h / this.zoom);
+    this.canvas.cx.rect((rectangle.w / -2) / this.zoom, (rectangle.h / -2) / this.zoom, rectangle.w / this.zoom, rectangle.h / this.zoom);
     //fill
     if(fill !== null) {
       this.canvas.cx.globalAlpha = fill.alpha;
@@ -311,9 +311,9 @@ class RenderTool {
     this.canvas.cx.rotate(shape.r * (Math.PI / 180));
     //draw line
     this.canvas.cx.beginPath();
-    this.canvas.cx.moveTo(shape.pairs[0].x, shape.pairs[0].y);
+    this.canvas.cx.moveTo(shape.pairs[0].x / this.zoom, shape.pairs[0].y / this.zoom);
     shape.pairs.forEach((shapePair) => {
-      this.canvas.cx.lineTo(shapePair.x, shapePair.y);
+      this.canvas.cx.lineTo(shapePair.x / this.zoom, shapePair.y / this.zoom);
     });
     this.canvas.cx.closePath();
     //fill
