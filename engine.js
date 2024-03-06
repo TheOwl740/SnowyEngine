@@ -218,6 +218,12 @@ class Shape {
 		this.pairs = pairs;
 		this.r = r;
 	}
+	//allows for whole shape scaling
+	scale(factor) {
+	  for(let scalePair = 0; scalePair < this.pairs.length; scalePair++) {
+	    this.pairs[scalePair].multiply(factor);
+	  }
+	}
 }
 
 //line data for renderers
