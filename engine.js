@@ -220,9 +220,9 @@ class Shape {
 	}
 	//allows for whole shape scaling
 	scale(factor) {
-	  for(let scalePair = 0; scalePair < this.pairs.length; scalePair++) {
-	    this.pairs[scalePair].multiply(factor);
-	  }
+    this.pairs.forEach((pair) => {
+      pair.multiply(factor);
+    });
 	}
 }
 
