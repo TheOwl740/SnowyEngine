@@ -61,6 +61,11 @@ class Pair {
     this.y += Math.sin(angle / 57.2958) * magnitude;
     return this;
   }
+  //sets this pair to the values of another to avoid reference issues
+  copy(pair) {
+    this.x = pair.x;
+    this.y = pair.y;
+  }
 }
 
 //event tracker
