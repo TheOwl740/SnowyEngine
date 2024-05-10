@@ -297,13 +297,13 @@ class RenderTool {
     //save canvas position
     this.canvas.cx.save();
     //translate canvas to rectangle and rotate
-    this.canvas.cx.translate(pair.x, pair.y);
+    this.canvas.cx.translate(pair.x - this.camera.x, pair.y - this.camera.y);
     this.canvas.cx.rotate(line.r * (Math.PI / 180));
     //draw line
     this.canvas.cx.beginPath();
-    this.canvas.cx.moveTo(line.pairs[0].x, line.pairs[0].y);
+    this.canvas.cx.moveTo(line.pairs[0].x / this.zoom, line.pairs[0].y / this.zoom);
     line.pairs.forEach((linePair) => {
-      this.canvas.cx.lineTo(linePair.x, linePair.y);
+      this.canvas.cx.lineTo(linePair.x / this.zoom, linePair.y / this.zoom);
     });
     //color
     [this.canvas.cx.globalAlpha, this.canvas.cx.lineWidth] = [border.alpha, border.w / this.zoom];
