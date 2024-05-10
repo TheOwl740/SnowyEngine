@@ -405,6 +405,14 @@ class Toolkit {
       return Math.floor((Math.random() * (Math.abs(limit2 - limit1) + 1)) + limit2);
     }
   }
+  //calculates the average value of an array of numbers
+  calcAverage(values) {
+    let currentMutation = 0;
+    values.forEach((value) => {
+      currentMutation += value;
+    });
+    return currentMutation / values.length;
+  }
   //rounds values
   roundNum(value, precision) {
     return Math.round(value * Math.pow(10, precision)) / Math.pow(10, precision);
@@ -416,6 +424,14 @@ class Toolkit {
   //adds pairs and returns product without mutating them
   addPairs(pair1, pair2) {
     return new Pair(pair1.x + pair2.x, pair1.y + pair2.y);
+  }
+  //generates a midpoint between multiple pairs
+  calcAveragePair(pairs) {
+    let retPair = new Pair(0, 0);
+    pairs.forEach((pair) => {
+      retPair.add(pair);
+    });
+    return retPair.multiply(1 / pairs.length);
   }
   //generates a pair which can be added to another to translate it in a direction
   calcRotationalTranslate(angle, magnitude) {
