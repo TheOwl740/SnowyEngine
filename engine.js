@@ -100,7 +100,12 @@ class EventTracker {
   }
   //disable context menu
   disableRightClick() {
-    document.addEventListener('contextmenu', function(e) {
+    document.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+    });
+  }
+  disableTab() {
+    document.addEventListener("keydown", (e) => {
       e.preventDefault();
     });
   }
