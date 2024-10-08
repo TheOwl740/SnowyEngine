@@ -75,17 +75,28 @@ class EventTracker {
     this.pressedKeys = [];
     this.pressedButtons = [];
     this.cursor = new Pair(0, 0);
+    //prevention listeners
+    this.tabEnabled = true;
+    this.rightClickEnabled = true;
     //listeners
-    document.addEventListener("keydown", (eObj) => {
-      if(!this.pressedKeys.includes(eObj.key)) {
-        this.pressedKeys.push(eObj.key);
+    document.addEventListener("contextmenu", (e) => {
+      if(!this.rightClickEnabled) {
+        e.preventDefault();
       }
     });
-    document.addEventListener("keyup", (eObj) => {
-      this.pressedKeys.splice(this.pressedKeys.indexOf(eObj.key), 1);
+    document.addEventListener("keydown", (e) => {
+      if(!this.pressedKeys.includes(e.key)) {
+        this.pressedKeys.push(e.key);
+      }
+      if(e.key === "Tab" && !this.tabEnabled) {
+        e.preventDefault();
+      }
     });
-    document.addEventListener("mousemove", (eObj) => {
-      [this.cursor.x, this.cursor.y] = [eObj.clientX, eObj.clientY * -1];
+    document.addEventListener("keyup", (e) => {
+      this.pressedKeys.splice(this.pressedKeys.indexOf(e.key), 1);
+    });
+    document.addEventListener("mousemove", (e) => {
+      [this.cursor.x, this.cursor.y] = [e.clientX, e.clientY * -1];
     });
     document.addEventListener("mousedown", (e) => {
       this.pressedButtons.push(e.button);
@@ -97,17 +108,6 @@ class EventTracker {
   //query dynamic cursor position
   dCursor(renderTool) {
     return new Pair(this.cursor.x + renderTool.camera.x, this.cursor.y + renderTool.camera.y);
-  }
-  //disable context menu
-  disableRightClick() {
-    document.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-    });
-  }
-  disableTab() {
-    document.addEventListener("keydown", (e) => {
-      e.preventDefault();
-    });
   }
   //get key presses
   getKey(name) {
