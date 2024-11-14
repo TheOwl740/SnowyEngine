@@ -6,9 +6,9 @@
 
 //canvas class
 class Canvas {
-  constructor(id) {
+  constructor(element) {
     this.type = "canvas";
-    this.element = document.getElementById(id);
+    this.element = element;
     this.cx = this.element.getContext("2d");
     [this.w, this.h] = [this.element.width, this.element.height];
     this.cx.scale(1, -1);
@@ -29,7 +29,7 @@ class Canvas {
 //2d pair coordinate
 class Pair {
   constructor(x, y) {
-	  this.type = "pair";
+    this.type = "pair";
     [this.x, this.y] = [x, y];
   }
   //add another pair
@@ -169,39 +169,39 @@ class Collider {
 
 //fill data for rendering methods
 class Fill {
-	constructor(color, alpha) {
-		this.type = "fill";
-		this.color = color;
-		this.alpha = alpha;
-	}
+  constructor(color, alpha) {
+    this.type = "fill";
+    this.color = color;
+    this.alpha = alpha;
+  }
 }
 
 //border data for renderers
 class Border {
-	constructor(color, alpha, w, corner) {
-		this.type = "border";
-		[this.color, this.corner] = [color, corner];
-		[this.alpha, this.w] = [alpha, w];
-	}
+  constructor(color, alpha, w, corner) {
+    this.type = "border";
+    [this.color, this.corner] = [color, corner];
+    [this.alpha, this.w] = [alpha, w];
+  }
 }
 
 //image data for renderers
 class Img {
-	constructor(img, alpha, r, x, y, w, h, hf, vf) {
-		this.type = "img";
-		this.img = img;
-		[this.alpha, this.x, this.y, this.w, this.h, this.r] = [alpha, x, y, w, h, r];
-		[this.hf, this.vf] = [hf, vf];
-	}
+  constructor(img, alpha, r, x, y, w, h, hf, vf) {
+    this.type = "img";
+    this.img = img;
+    [this.alpha, this.x, this.y, this.w, this.h, this.r] = [alpha, x, y, w, h, r];
+    [this.hf, this.vf] = [hf, vf];
+  }
 }
 
 //text data for renderers
-class Text {
-	constructor(font, text, r, size) {
-		this.type = "text";
-		[this.font, this.text] = [font, text];
-		[this.r, this.size] = [r, size];
-	}
+class TextNode {
+  constructor(font, text, r, size) {
+    this.type = "text";
+    [this.font, this.text] = [font, text];
+    [this.r, this.size] = [r, size];
+  }
 }
 
 //circle data for renderers
@@ -222,17 +222,17 @@ class Rectangle {
 
 //shape data for renderers
 class Shape {
-	constructor(pairs, r) {
-		this.type = "shape";
-		this.pairs = pairs;
-		this.r = r;
-	}
-	//allows for whole shape scaling
-	scale(factor) {
+  constructor(pairs, r) {
+    this.type = "shape";
+    this.pairs = pairs;
+    this.r = r;
+  }
+  //allows for whole shape scaling
+  scale(factor) {
     this.pairs.forEach((pair) => {
       pair.multiply(factor);
     });
-	}
+  }
 }
 
 //line data for renderers
@@ -350,8 +350,8 @@ class RenderTool {
   renderImage(pair, img) {
     //prepare canvas scaling and flipping
     const fc = {
-    	x: 1,
-    	y: -1
+      x: 1,
+      y: -1
     };
     this.canvas.cx.save();
     if(img.hf) {
@@ -449,7 +449,7 @@ class Toolkit {
     let passthroughs;
     let collided = false;
     const testPoints = [];
-    
+
     //point collisons
     if(collider1.type === "pair") {
       //set last to end
@@ -484,7 +484,7 @@ class Toolkit {
       } else {
         return true;
       }
-    //shape collisions
+      //shape collisions
     } else {
       //cycle each point in collider1 through detector
       collider1.pairs.forEach((testPair) => {
