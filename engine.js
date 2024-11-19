@@ -104,6 +104,13 @@ class EventTracker {
     document.addEventListener("mouseup", (e) => {
       this.pressedButtons.splice(this.pressedButtons.indexOf(e.key), 1);
     });
+    document.addEventListener("touchstart", (e) => {
+      [this.cursor.x, this.cursor.y] = [e.clientX, e.clientY * -1];
+      this.pressedButtons.push(0);
+    });
+    document.addEventListener("touchend", () => {
+      this.pressedButtons.splice(this.pressedButtons.indexOf(0), 1);
+    });
   }
   //query dynamic cursor position
   dCursor(renderTool) {
