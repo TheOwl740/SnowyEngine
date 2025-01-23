@@ -95,7 +95,7 @@ class EventTracker {
     document.addEventListener("keyup", (e) => {
       this.pressedKeys.splice(this.pressedKeys.indexOf(e.key), 1);
     });
-    document.addEventListener("mousemove", (e) => {
+    document.addEventListener("pointermove", (e) => {
       [this.cursor.x, this.cursor.y] = [e.clientX, e.clientY * -1];
     });
     document.addEventListener("mousedown", (e) => {
@@ -105,7 +105,8 @@ class EventTracker {
       this.pressedButtons.splice(this.pressedButtons.indexOf(e.key), 1);
     });
     document.addEventListener("touchstart", (e) => {
-      [this.cursor.x, this.cursor.y] = [e.clientX, e.clientY * -1];
+      [this.cursor.x, this.cursor.y] = [e.touches[0].clientX, e.touches[0].clientY * -1];
+      console.log(this.cursor);
       this.pressedButtons.push(0);
     });
     document.addEventListener("touchend", () => {
