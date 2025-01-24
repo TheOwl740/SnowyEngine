@@ -106,7 +106,6 @@ class EventTracker {
     });
     document.addEventListener("touchstart", (e) => {
       [this.cursor.x, this.cursor.y] = [e.touches[0].clientX, e.touches[0].clientY * -1];
-      console.log(this.cursor);
       this.pressedButtons.push(0);
     });
     document.addEventListener("touchend", () => {
