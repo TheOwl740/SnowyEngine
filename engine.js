@@ -204,10 +204,21 @@ class Img {
 
 //text data for renderers
 class TextNode {
-  constructor(font, text, r, size) {
+  constructor(font, text, r, size, alignment) {
     this.type = "text";
     [this.font, this.text] = [font, text];
     [this.r, this.size] = [r, size];
+    //fixes mysterious reversal of alignment
+    switch(alignment) {
+      case "left":
+        this.alignment = "right";
+        break;
+      case "right":
+        this.alignment = "left";
+        break;
+      default:
+        this.alignment = "center";
+    }
   }
 }
 
@@ -383,6 +394,7 @@ class RenderTool {
   }
   //render text
   renderText(pair, text, fill) {
+    this.canvas.cx.textAlign = text.alignment;
     this.canvas.cx.save();
     this.canvas.cx.scale(1, -1);
     this.canvas.cx.translate(pair.x, pair.y * -1);
