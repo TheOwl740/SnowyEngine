@@ -107,7 +107,7 @@ class EventTracker {
       this.pressedButtons.push(e.button);
     });
     document.addEventListener("mouseup", (e) => {
-      this.pressedButtons.splice(this.pressedButtons.indexOf(e.key), 1);
+      this.pressedButtons.splice(this.pressedButtons.indexOf(e.button), 1);
     });
     document.addEventListener("touchstart", (e) => {
       [this.cursor.x, this.cursor.y] = [(e.touches[0].clientX - this.cRect.left) * (cs.element.width / this.cRect.width), (e.touches[0].clientY - this.cRect.top) * (cs.element.height / this.cRect.height) * -1];
@@ -400,6 +400,7 @@ class RenderTool {
   //render text
   renderText(pair, text, fill) {
     this.canvas.cx.textAlign = text.alignment;
+    this.canvas.cx.textBaseline = "middle";
     this.canvas.cx.save();
     this.canvas.cx.scale(1, -1);
     this.canvas.cx.translate(pair.x, pair.y * -1);
@@ -596,39 +597,63 @@ class PathfindingController {
     const dy = Math.abs(a.y - b.y);
     return (dx < dy) ? 0.4 * dx + dy : 0.4 * dy + dx;
   }
-  getNeighborIndices(index, closed) {
+  getNeighborIndices(index, closed, open, extNonWalkable) {
     let neighbors = [];
     for(let x = -1; x <= 1; x++) {
+      if(index.x + x >= this.grid.length || index.x - x < 0) {
+        continue;
+      }
       for(let y = -1; y <= 1; y++) {
-        const selectedTile = this.grid[index.x + x][index.y + y];
-        if(selectedTile !== undefined && (!selectedTile.index.isEqualTo(index)) && selectedTile.walkable) {
-          let isClosed = false;
-          closed.forEach(closedNode => {
-            if(closedNode.index.isEqualTo(selectedTile.index)) {
-              isClosed = true;
-            }
-          });
-          if(!isClosed) {
-            neighbors.push(selectedTile.index);
+        if(index.y + y >= this.grid[0].length || index.y - y < 0) {
+          continue;
+        }
+        let selectedTile = this.grid[index.x + x][index.y + y];
+        extNonWalkable.forEach((nwIndex) => {
+          if(nwIndex.isEqualTo({x: index.x + x, y: index.y + y})) {
+            selectedTile = undefined;
           }
+        });
+        open.forEach((existingIndex) => {
+          if(existingIndex.index.isEqualTo({x: index.x + x, y: index.y + y})) {
+            selectedTile = undefined;
+          }
+        });
+        if(selectedTile !== undefined && (!selectedTile.index.isEqualTo(index)) && selectedTile.walkable && !closed.has(this.toKey(selectedTile.index))) {
+          neighbors.push(selectedTile.index);
         }
       }
     }
     return neighbors;
   }
-  pathfind(originIndex, targetIndex) {
+  pathfind(originIndex, targetIndex, extNonWalkable, loopCap) {
     //nodes to be evaluated list
     const open = [new PathNode(this, null, originIndex, targetIndex)];
     //nodes already evaluated list initialised with start node
-    const closed = [];
+    const closed = new Set();
     //current set to start node
     let current;
+    //loop limiter
+    let loopCount = 0;
     //return null if at target
     if(originIndex.isEqualTo(targetIndex)) {
       return null;
     }
+    //return null if target is invalid
+    if(!this.grid[targetIndex.x][targetIndex.y].walkable) {
+      return null;
+    }
+    extNonWalkable.forEach((nwIndex) => {
+      if(nwIndex.isEqualTo(targetIndex)) {
+        return null;
+      }
+    });
     //while there are nodes to be evaluated
     while(open.length > 0) {
+      //checks loop count
+      loopCount++;
+      if(loopCount > loopCap) {
+        return null;
+      }
       //best node option tracker
       let bestNode = null;
       //check each open node
@@ -642,7 +667,7 @@ class PathfindingController {
       //assign current to best node
       current = bestNode;
       //add current to closed
-      closed.push(current);
+      closed.add(this.toKey(current.index));
       //remove current from open
       for(let node = 0; node < open.length; node++) {
         if(open[node] === current) {
@@ -661,10 +686,14 @@ class PathfindingController {
         return path.reverse();
       }
       //add valid neighbors to open
-      this.getNeighborIndices(current.index, closed).forEach((neighborIndex) => {
+      this.getNeighborIndices(current.index, closed, open, extNonWalkable).forEach((neighborIndex) => {
         open.push(new PathNode(this, current, neighborIndex, targetIndex));
       });
     }
+    return null;
+  }
+  toKey(index) {
+    return index.x + "," + index.y;
   }
 }
 //pathfinding node class to track pathfind progress
