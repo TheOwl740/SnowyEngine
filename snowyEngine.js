@@ -597,7 +597,7 @@ class PathfindingController {
     const dy = Math.abs(a.y - b.y);
     return (dx < dy) ? 0.4 * dx + dy : 0.4 * dy + dx;
   }
-  getNeighborIndices(index, closed, open, extNonWalkable) {
+  getNeighborIndices(index, closed, extNonWalkable) {
     let neighbors = [];
     for(let x = -1; x <= 1; x++) {
       if(index.x + x >= this.grid.length || index.x - x < 0) {
@@ -610,11 +610,6 @@ class PathfindingController {
         let selectedTile = this.grid[index.x + x][index.y + y];
         extNonWalkable.forEach((nwIndex) => {
           if(nwIndex.isEqualTo({x: index.x + x, y: index.y + y})) {
-            selectedTile = undefined;
-          }
-        });
-        open.forEach((existingIndex) => {
-          if(existingIndex.index.isEqualTo({x: index.x + x, y: index.y + y})) {
             selectedTile = undefined;
           }
         });
@@ -654,6 +649,32 @@ class PathfindingController {
       if(loopCount > loopCap) {
         return null;
       }
+      //sort list by transform, then by f, then by h
+      open.sort((a, b) => {
+        if (a.index.isEqualTo(b.index)) {
+          if (a.f !== b.f) {
+            return a.f - b.f;
+          } else {
+            return a.h - b.h;
+          }
+        } else {
+          if (a.index.x !== b.index.x) {
+            return a.index.x - b.index.x;
+          } else {
+            return a.index.y - b.index.y;
+          }
+        }
+      });
+      //delete alike transforms
+      let currentOpenI = open[0].index;
+      for(let oi = 1; oi < open.length; oi++) {
+        if(open[oi].index.isEqualTo(currentOpenI)) {
+          open.splice(oi, 1);
+          oi--;
+        } else {
+          currentOpenI = open[oi].index;
+        }
+      }
       //best node option tracker
       let bestNode = null;
       //check each open node
@@ -686,7 +707,7 @@ class PathfindingController {
         return path.reverse();
       }
       //add valid neighbors to open
-      this.getNeighborIndices(current.index, closed, open, extNonWalkable).forEach((neighborIndex) => {
+      this.getNeighborIndices(current.index, closed, extNonWalkable).forEach((neighborIndex) => {
         open.push(new PathNode(this, current, neighborIndex, targetIndex));
       });
     }
