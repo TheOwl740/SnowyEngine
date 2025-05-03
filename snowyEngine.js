@@ -215,15 +215,19 @@ class TextNode {
     [this.r, this.size] = [r, size];
     //fixes mysterious reversal of alignment
     switch(alignment) {
-      case "left":
+      case "right":
         this.alignment = "right";
         break;
-      case "right":
+      case "left":
         this.alignment = "left";
         break;
       default:
         this.alignment = "center";
     }
+  }
+  measure(rt) {
+    rt.canvas.cx.font = `${this.size / rt.zoom}px ${this.font}`;
+    return rt.canvas.cx.measureText(this.text).width;
   }
 }
 
