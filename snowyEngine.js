@@ -590,18 +590,23 @@ class Toolkit {
     }
   }
 }
-//tile based pathfinding class, takes in a grid matrix of tile objects. Tiles must have a boolean walkable property
+//tile based pathfinding class, takes in a grid matrix of tile objects
 class PathfindingController {
-  constructor(grid) {
+  constructor(grid, allowDiagonals) {
     //the matrix of tiles to pathfind across
     this.grid = grid;
+    this.allowDiagonals = allowDiagonals;
   }
-  octile(a, b) {
-    const dx = Math.abs(a.x - b.x);
-    const dy = Math.abs(a.y - b.y);
-    return (dx < dy) ? 0.4 * dx + dy : 0.4 * dy + dx;
+  heuristic(a, b) {
+    if(this.allowDiagonals) {
+      const dx = Math.abs(a.x - b.x);
+      const dy = Math.abs(a.y - b.y);
+      return (dx < dy) ? 0.4 * dx + dy : 0.4 * dy + dx;
+    } else {
+      return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+    }
   }
-  getNeighborIndices(index, closed, extNonWalkable) {
+  getNeighborIndices(index, closed, nonwalkableIndices) {
     let neighbors = [];
     for(let x = -1; x <= 1; x++) {
       if(index.x + x >= this.grid.length || index.x - x < 0) {
@@ -611,8 +616,11 @@ class PathfindingController {
         if(index.y + y >= this.grid[0].length || index.y - y < 0) {
           continue;
         }
+        if(x !== 0 && y !== 0 && !this.allowDiagonals) {
+          continue;
+        }
         let selectedTile = this.grid[index.x + x][index.y + y];
-        extNonWalkable.forEach((nwIndex) => {
+        nonwalkableIndices.forEach((nwIndex) => {
           if(nwIndex.isEqualTo({x: index.x + x, y: index.y + y})) {
             selectedTile = undefined;
           }
@@ -624,7 +632,7 @@ class PathfindingController {
     }
     return neighbors;
   }
-  pathfind(originIndex, targetIndex, extNonWalkable, loopCap) {
+  pathfind(originIndex, targetIndex, nonwalkableIndices, loopCap) {
     //nodes to be evaluated list
     const open = [new PathNode(this, null, originIndex, targetIndex)];
     //nodes already evaluated list initialised with start node
@@ -637,11 +645,7 @@ class PathfindingController {
     if(originIndex.isEqualTo(targetIndex)) {
       return null;
     }
-    //return null if target is invalid
-    if(!this.grid[targetIndex.x][targetIndex.y].walkable) {
-      return null;
-    }
-    extNonWalkable.forEach((nwIndex) => {
+    nonwalkableIndices.forEach((nwIndex) => {
       if(nwIndex.isEqualTo(targetIndex)) {
         return null;
       }
@@ -711,7 +715,7 @@ class PathfindingController {
         return path.reverse();
       }
       //add valid neighbors to open
-      this.getNeighborIndices(current.index, closed, extNonWalkable).forEach((neighborIndex) => {
+      this.getNeighborIndices(current.index, closed, nonwalkableIndices).forEach((neighborIndex) => {
         open.push(new PathNode(this, current, neighborIndex, targetIndex));
       });
     }
@@ -733,9 +737,9 @@ class PathNode {
     //this node's index
     this.index = index;
     //path distance from start to this node
-    this.g = (parentNode === null) ? 0 : (parentNode.g + controller.octile(parentNode.index, this.index));
-    //octile distance from this node's index to target index
-    this.h = controller.octile(this.index, targetIndex);
+    this.g = (parentNode === null) ? 0 : (parentNode.g + controller.heuristic(parentNode.index, this.index));
+    //heuristic distance from this node's index to target index
+    this.h = controller.heuristic(this.index, targetIndex);
     //attractiveness score composed of above values
     this.f = this.g + this.h;
   }
