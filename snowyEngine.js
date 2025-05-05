@@ -69,6 +69,9 @@ class Pair {
   isEqualTo(pair) {
     return this.x === pair.x && this.y === pair.y;
   }
+  distToOrigin() {
+    return ((this.x ** 2) + (this.y ** 2)) ** 0.5;
+  }
 }
 
 //event tracker
@@ -609,11 +612,11 @@ class PathfindingController {
   getNeighborIndices(index, closed, nonwalkableIndices) {
     let neighbors = [];
     for(let x = -1; x <= 1; x++) {
-      if(index.x + x >= this.grid.length || index.x - x < 0) {
+      if(index.x + x >= this.grid.length || index.x + x < 0) {
         continue;
       }
       for(let y = -1; y <= 1; y++) {
-        if(index.y + y >= this.grid[0].length || index.y - y < 0) {
+        if(index.y + y >= this.grid[0].length || index.y + y < 0) {
           continue;
         }
         if(x !== 0 && y !== 0 && !this.allowDiagonals) {
@@ -625,7 +628,7 @@ class PathfindingController {
             selectedTile = undefined;
           }
         });
-        if(selectedTile !== undefined && (!selectedTile.index.isEqualTo(index)) && selectedTile.walkable && !closed.has(this.toKey(selectedTile.index))) {
+        if(selectedTile !== undefined && (!selectedTile.index.isEqualTo(index)) && !closed.has(this.toKey(selectedTile.index))) {
           neighbors.push(selectedTile.index);
         }
       }
