@@ -38,6 +38,12 @@ class Pair {
     this.y += pair.y;
     return this;
   }
+  //subtract another pair
+  subtract(pair) {
+    this.x -= pair.x;
+    this.y -= pair.y;
+    return this;
+  }
   //multiply values by a number
   multiply(value) {
     this.x *= value;
