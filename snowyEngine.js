@@ -770,3 +770,66 @@ class GameTimer {
     this.timer = window.setInterval(this.update.bind(this), this.interval);
   }
 }
+
+//scheme for all tiles
+class TileScheme {
+  constructor(renderTool, primaryFill, secondaryFill, innerBorder, outerBorder, textFill) {
+    this.renderTool = renderTool;
+    this.primaryFill = primaryFill;
+    this.secondaryFill = secondaryFill;
+    this.innerBorder = innerBorder;
+    this.outerBorder = outerBorder;
+    this.textFill = textFill;
+  }
+}
+
+//blank tile
+class BlankTile extends TileScheme {
+  constructor(tileScheme, transform, dimensions) {
+    super(tileScheme.renderTool, tileScheme.primaryFill, tileScheme.secondaryFill, tileScheme.innerBorder, tileScheme.outerBorder, tileScheme.textFill);
+    this.transform = transform;
+    this.dimensions = dimensions;
+  }
+  render() {
+    this.renderTool.renderRectangle(this.transform, new Rectangle(0, this.dimensions.x, this.dimensions.y), this.primaryFill, this.innerBorder);
+    this.renderTool.renderRectangle(this.transform, new Rectangle(0, this.dimensions.x + ((this.innerBorder.w + this.outerBorder.w) / 2), this.dimensions.y + ((this.innerBorder.w + this.outerBorder.w) / 2)), null, this.outerBorder);
+  }
+}
+
+//textbox tile takes in a textnode with the entirety of the text inside
+class Textbox extends TileScheme {
+  constructor(tileScheme, transform, dimensions, sourceText) {
+    super(tileScheme.renderTool, tileScheme.primaryFill, tileScheme.secondaryFill, tileScheme.innerBorder, tileScheme.outerBorder, tileScheme.textFill);
+    this.transform = transform;
+    this.dimensions = dimensions;
+    this.textLines = [];
+    this.textTransform;
+    //get line position
+    switch(sourceText.alignment) {
+      case "left":
+        this.textTransform = this.transform.duplicate().add({x: (this.dimensions.x * 0.95) / -2, y: (this.dimensions.y * 0.85) / 2});
+        break;
+      case "right":
+        break;
+      default:
+    }
+    //set accumulators
+    let nextLine;
+    const splitText = sourceText.text.split(" ");
+    //split text into lines
+    while(splitText.length > 0) {
+      nextLine = new TextNode(sourceText.font, "", sourceText.r, sourceText.size, sourceText.alignment);
+      while(nextLine.measure(this.renderTool) + new TextNode(sourceText.font, splitText[0], sourceText.r, sourceText.size, sourceText.alignment).measure(this.renderTool) < this.dimensions.x * 0.95) {
+        nextLine.text += splitText.shift() + " ";
+      }
+      this.textLines.push(nextLine);
+    }
+  }
+  render() {
+    this.renderTool.renderRectangle(this.transform, new Rectangle(0, this.dimensions.x, this.dimensions.y), this.primaryFill, this.innerBorder);
+    this.renderTool.renderRectangle(this.transform, new Rectangle(0, this.dimensions.x + ((this.innerBorder.w + this.outerBorder.w) / 2), this.dimensions.y + ((this.innerBorder.w + this.outerBorder.w) / 2)), null, this.outerBorder);
+    for(let line = 0; line < this.textLines.length; line++) {
+      this.renderTool.renderText(this.textTransform.duplicate().add(new Pair(0, line * -this.textLines[line].size)), this.textLines[line], this.textFill);
+    }
+  }
+}
