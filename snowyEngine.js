@@ -210,6 +210,20 @@ class Img {
   }
 }
 
+//image data for renderers
+class Sprite {
+  constructor(img, alpha, r, x, y, w, h, hf, vf, tw, th) {
+    this.type = "sprite";
+    this.img = img;
+    this.activeTile = new Pair(0, 0);
+    [this.alpha, this.x, this.y, this.w, this.h, this.r, this.tw, this.th] = [alpha, x, y, w, h, r, tw, th];
+    [this.hf, this.vf] = [hf, vf];
+  }
+  setActive(indexPair) {
+    this.activeTile = indexPair.duplicate();
+  }
+}
+
 //text data for renderers
 class TextNode {
   constructor(font, text, r, size, alignment) {
@@ -400,7 +414,11 @@ class RenderTool {
     this.canvas.cx.translate(((pair.x - this.camera.x) / this.zoom) * fc.x, ((pair.y - this.camera.y) / this.zoom) * fc.y);
     this.canvas.cx.rotate(img.r * fc.x * fc.y * (Math.PI / 180));
     //draw
-    this.canvas.cx.drawImage(img.img, ((img.x / this.zoom) * fc.x) - ((img.w / this.zoom) / 2), ((img.y / this.zoom) * fc.y) - ((img.h / this.zoom) / 2), img.w / this.zoom, img.h / this.zoom);
+    if(img.type === "img") {
+      this.canvas.cx.drawImage(img.img, ((img.x / this.zoom) * fc.x) - ((img.w / this.zoom) / 2), ((img.y / this.zoom) * fc.y) - ((img.h / this.zoom) / 2), img.w / this.zoom, img.h / this.zoom);
+    } else {
+      this.canvas.cx.drawImage(img.img, (img.activeTile.x * img.tw) + 0.1, (img.activeTile.y * img.th) + 0.1, img.tw - 0.2, img.th - 0.2, ((img.x / this.zoom) * fc.x) - ((img.w / this.zoom) / 2), ((img.y / this.zoom) * fc.y) - ((img.h / this.zoom) / 2), img.w / this.zoom, img.h / this.zoom);
+    }
     //restore canvas
     this.canvas.cx.restore();
   }
