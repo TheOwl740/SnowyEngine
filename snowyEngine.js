@@ -208,6 +208,9 @@ class Img {
     [this.alpha, this.x, this.y, this.w, this.h, this.r] = [alpha, x, y, w, h, r];
     [this.hf, this.vf] = [hf, vf];
   }
+  duplicate() {
+    return new Img(this.img, this.alpha, this.r, this.x, this.y, this.w, this.h, this.hf, this.vf);
+  }
 }
 
 //image data for renderers
@@ -221,6 +224,9 @@ class Sprite {
   }
   setActive(indexPair) {
     this.activeTile = indexPair.duplicate();
+  }
+  duplicate() {
+    return new Sprite(this.img, this.alpha, this.r, this.x, this.y, this.w, this.h, this.hf, this.vf, this.tw, this.th);
   }
 }
 
