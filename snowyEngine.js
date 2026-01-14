@@ -1,10 +1,6 @@
-//jshint maxerr: 10000
-
 //SNOWY GAME ENGINE
 
-//PASSIVE CLASSES
-
-//canvas class
+//canvas class holds engine data related to a canvas on the html document
 class Canvas {
   constructor(element) {
     this.type = "canvas";
@@ -25,8 +21,7 @@ class Canvas {
     this.cx.scale(1, -1);
   }
 }
-
-//2d pair coordinate
+//2d coordinate pair used in many calculations
 class Pair {
   constructor(x, y) {
     this.type = "pair";
@@ -61,7 +56,7 @@ class Pair {
     this.y += Math.sin(angle / 57.2958) * magnitude;
     return this;
   }
-  //returns a duplicate of this class
+  //returns a duplicate of the active instance
   duplicate() {
     return new Pair(this.x, this.y);
   }
@@ -73,8 +68,7 @@ class Pair {
     return ((this.x ** 2) + (this.y ** 2)) ** 0.5;
   }
 }
-
-//event tracker
+//event tracker contains keypress, mouse and tap data, and can block context keys.
 class EventTracker {
   constructor(cs) {
     this.type = "eventTracker";
@@ -144,7 +138,7 @@ class EventTracker {
     }
   }
 }
-
+//colliders are used in toolkit collision detection
 class Collider {
   constructor(pair, module) {
     //data
@@ -157,7 +151,7 @@ class Collider {
     switch(this.module.type) {
       case "shape":
         this.module.pairs.forEach((arrayPair) => {
-          this.pairs.push(tools.addPairs(pair, tools.calcRotationalTranslate(tools.calcAngle(zeroedPair, arrayPair) + this.module.r, tools.calcDistance(zeroedPair, arrayPair))));
+          this.pairs.push(tools.pairMath(pair, tools.calcRotationalTranslate(tools.pairMath(zeroedPair, arrayPair, "angle") + this.module.r, tools.pairMath(zeroedPair, arrayPair, "distance")), "add"));
           this.pairs[this.pairs.length - 1].round(2);
         });
         break;
@@ -169,19 +163,18 @@ class Collider {
           new Pair(this.module.w / -2, this.module.h / -2),
         ];
         initialPairs.forEach((arrayPair) => {
-          this.pairs.push(tools.addPairs(pair, tools.calcRotationalTranslate(tools.calcAngle(zeroedPair, arrayPair) + this.module.r, tools.calcDistance(zeroedPair, arrayPair))));
+          this.pairs.push(tools.pairMath(pair, tools.calcRotationalTranslate(tools.pairMath(zeroedPair, arrayPair, "angle") + this.module.r, tools.pairMath(zeroedPair, arrayPair, "distance")), "add"));
         });
         break;
       case "circle":
         let vertices = tools.roundNum((this.module.d / 5) + 5, 0);
         for(let vertexIndex = 0; vertexIndex < vertices; vertexIndex++) {
-          this.pairs.push(tools.addPairs(pair, tools.calcRotationalTranslate((360 / vertices) * vertexIndex, this.module.d / 2)));
+          this.pairs.push(tools.pairMath(pair, tools.calcRotationalTranslate((360 / vertices) * vertexIndex, this.module.d / 2), "add"));
         }
         break;
     }
   }
 }
-
 //fill data for rendering methods
 class Fill {
   constructor(color, alpha) {
@@ -190,7 +183,6 @@ class Fill {
     this.alpha = alpha;
   }
 }
-
 //border data for renderers
 class Border {
   constructor(color, alpha, w, corner) {
@@ -199,7 +191,6 @@ class Border {
     [this.alpha, this.w] = [alpha, w];
   }
 }
-
 //image data for renderers
 class Img {
   constructor(img, alpha, r, x, y, w, h, hf, vf) {
@@ -212,8 +203,7 @@ class Img {
     return new Img(this.img, this.alpha, this.r, this.x, this.y, this.w, this.h, this.hf, this.vf);
   }
 }
-
-//image data for renderers
+//spritesheet image data for renderers
 class Sprite {
   constructor(img, alpha, r, x, y, w, h, hf, vf, tw, th) {
     this.type = "sprite";
@@ -222,14 +212,15 @@ class Sprite {
     [this.alpha, this.x, this.y, this.w, this.h, this.r, this.tw, this.th] = [alpha, x, y, w, h, r, tw, th];
     [this.hf, this.vf] = [hf, vf];
   }
+  //sets active cell on the spritesheet that will be rendered
   setActive(indexPair) {
     this.activeTile = indexPair.duplicate();
   }
+  //duplicates this instance
   duplicate() {
     return new Sprite(this.img, this.alpha, this.r, this.x, this.y, this.w, this.h, this.hf, this.vf, this.tw, this.th);
   }
 }
-
 //text data for renderers
 class TextNode {
   constructor(font, text, r, size, alignment) {
@@ -248,29 +239,27 @@ class TextNode {
         this.alignment = "center";
     }
   }
+  //returns the width of a text given the context of a render tool
   measure(rt) {
     rt.canvas.cx.font = `${this.size / rt.zoom}px ${this.font}`;
     return rt.canvas.cx.measureText(this.text).width;
   }
 }
-
-//circle data for renderers
+//circle data for renderers and colliders
 class Circle {
   constructor(d) {
     this.type = "circle";
     this.d = d;
   }
 }
-
-//rectangle data for renderers
+//rectangle data for renderers and colliders
 class Rectangle {
   constructor(r, w, h) {
     this.type = "rectangle";
     [this.r, this.w, this.h] = [r, w, h];
   }
 }
-
-//shape data for renderers
+//shape data for renderers and colliders
 class Shape {
   constructor(pairs, r) {
     this.type = "shape";
@@ -284,7 +273,6 @@ class Shape {
     });
   }
 }
-
 //line data for renderers
 class Line {
   constructor(pairs, r) {
@@ -293,10 +281,7 @@ class Line {
     this.r = r;
   }
 }
-
-//ACTIVE CLASSES
-
-//renderTool class
+//renderTool class renders a variety of classes onto the given canvas.
 class RenderTool {
   constructor(canvas) {
     this.type = "renderTool";
@@ -442,8 +427,7 @@ class RenderTool {
     this.canvas.cx.restore();
   }
 }
-
-//toolkit class
+//toolkit class handles a variety of functions, including trigonometry, collisions, and general pair math
 class Toolkit {
   constructor() {
     this.type = "toolkit";
@@ -453,10 +437,6 @@ class Toolkit {
     const holdingObject = new Image();
     holdingObject.src = src;
     return holdingObject;
-  }
-  //calculates distance between pairs
-  calcDistance(pair1, pair2) {
-    return Math.sqrt(Math.pow(pair1.x - pair2.x, 2) + Math.pow(pair1.y - pair2.y, 2));
   }
   //generates random ints
   randomNum(limit1, limit2) {
@@ -478,13 +458,24 @@ class Toolkit {
   roundNum(value, precision) {
     return Math.round(value * Math.pow(10, precision)) / Math.pow(10, precision);
   }
-  //calculates the direction from pairs 1 to 2
-  calcAngle(pair1, pair2) {
-    return Math.round(Math.atan2(pair1.y - pair2.y, pair1.x - pair2.x) * 57.2958) + 180;
-  }
-  //adds pairs and returns product without mutating them
-  addPairs(pair1, pair2) {
-    return new Pair(pair1.x + pair2.x, pair1.y + pair2.y);
+  //performs non mutative math on two pairs
+  pairMath(pair1, pair2, operation) {
+    switch(operation) {
+      case "add":
+        return new Pair(pair1.x + pair2.x, pair1.y + pair2.y);
+      case "subtract":
+        return new Pair(pair1.x - pair2.x, pair1.y - pair2.y);
+      case "multiply":
+        return new Pair(pair1.x * pair2.x, pair1.y * pair2.y);
+      case "divide":
+        return new Pair(pair1.x / pair2.x, pair1.y / pair2.y);
+      case "modulus":
+        return new Pair(pair1.x % pair2.x, pair1.y % pair2.y);
+      case "distance":
+        return Math.sqrt(Math.pow(pair1.x - pair2.x, 2) + Math.pow(pair1.y - pair2.y, 2));
+      case "angle":
+        return Math.round(Math.atan2(pair1.y - pair2.y, pair1.x - pair2.x) * 57.2958) + 180;
+    }
   }
   //generates a midpoint between multiple pairs
   calcAveragePair(pairs) {
@@ -794,7 +785,6 @@ class GameTimer {
     this.timer = window.setInterval(this.update.bind(this), this.interval);
   }
 }
-
 //scheme for all tiles
 class TileScheme {
   constructor(renderTool, primaryFill, secondaryFill, innerBorder, outerBorder, textFill) {
@@ -806,7 +796,6 @@ class TileScheme {
     this.textFill = textFill;
   }
 }
-
 //blank tile
 class BlankTile extends TileScheme {
   constructor(tileScheme, transform, dimensions) {
@@ -819,7 +808,6 @@ class BlankTile extends TileScheme {
     this.renderTool.renderRectangle(this.transform, new Rectangle(0, this.dimensions.x + ((this.innerBorder.w + this.outerBorder.w) / 2), this.dimensions.y + ((this.innerBorder.w + this.outerBorder.w) / 2)), null, this.outerBorder);
   }
 }
-
 //textbox tile takes in a textnode with the entirety of the text inside
 class Textbox extends TileScheme {
   constructor(tileScheme, transform, dimensions, sourceText) {
