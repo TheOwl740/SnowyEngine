@@ -787,10 +787,9 @@ class GameTimer {
 }
 //scheme for all tiles
 class TileScheme {
-  constructor(renderTool, primaryFill, secondaryFill, innerBorder, outerBorder, textFill) {
+  constructor(renderTool, primaryFill, innerBorder, outerBorder, textFill) {
     this.renderTool = renderTool;
     this.primaryFill = primaryFill;
-    this.secondaryFill = secondaryFill;
     this.innerBorder = innerBorder;
     this.outerBorder = outerBorder;
     this.textFill = textFill;
@@ -799,7 +798,7 @@ class TileScheme {
 //blank tile
 class BlankTile extends TileScheme {
   constructor(tileScheme, transform, dimensions) {
-    super(tileScheme.renderTool, tileScheme.primaryFill, tileScheme.secondaryFill, tileScheme.innerBorder, tileScheme.outerBorder, tileScheme.textFill);
+    super(tileScheme.renderTool, tileScheme.primaryFill, tileScheme.innerBorder, tileScheme.outerBorder, tileScheme.textFill);
     this.transform = transform;
     this.dimensions = dimensions;
   }
@@ -811,7 +810,7 @@ class BlankTile extends TileScheme {
 //textbox tile takes in a textnode with the entirety of the text inside
 class Textbox extends TileScheme {
   constructor(tileScheme, transform, dimensions, sourceText) {
-    super(tileScheme.renderTool, tileScheme.primaryFill, tileScheme.secondaryFill, tileScheme.innerBorder, tileScheme.outerBorder, tileScheme.textFill);
+    super(tileScheme.renderTool, tileScheme.primaryFill, tileScheme.innerBorder, tileScheme.outerBorder, tileScheme.textFill);
     this.transform = transform;
     this.dimensions = dimensions;
     this.textLines = [];
