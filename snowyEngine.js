@@ -818,11 +818,8 @@ class Textbox extends TileScheme {
     //get line position
     switch(sourceText.alignment) {
       case "left":
-        this.textTransform = this.transform.duplicate().add({x: (this.dimensions.x * 0.95) / -2, y: (this.dimensions.y * 0.85) / 2});
+        this.textTransform = this.transform.duplicate().add(new Pair((this.dimensions.x / -2) + sourceText.size, (this.dimensions.y / 2) - (sourceText.size * 1.5)));
         break;
-      case "right":
-        break;
-      default:
     }
     //set accumulators
     let nextLine;
