@@ -830,7 +830,7 @@ class Textbox extends TileScheme {
     //split text into lines
     while(splitText.length > 0) {
       nextLine = new TextNode(sourceText.font, "", sourceText.r, sourceText.size, sourceText.alignment);
-      while(nextLine.measure(this.renderTool) + new TextNode(sourceText.font, splitText[0], sourceText.r, sourceText.size, sourceText.alignment).measure(this.renderTool) < this.dimensions.x * 0.95) {
+      while(splitText.length > 0 && nextLine.measure(this.renderTool) + new TextNode(sourceText.font, splitText[0], sourceText.r, sourceText.size, sourceText.alignment).measure(this.renderTool) < this.dimensions.x * 0.95) {
         nextLine.text += splitText.shift() + " ";
       }
       this.textLines.push(nextLine);
