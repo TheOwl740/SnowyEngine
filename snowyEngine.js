@@ -215,10 +215,11 @@ class Sprite {
   //sets active cell on the spritesheet that will be rendered
   setActive(indexPair) {
     this.activeTile = indexPair.duplicate();
+    return this;
   }
   //duplicates this instance
   duplicate() {
-    return new Sprite(this.img, this.alpha, this.r, this.x, this.y, this.w, this.h, this.hf, this.vf, this.tw, this.th);
+    return new Sprite(this.img, this.alpha, this.r, this.x, this.y, this.w, this.h, this.hf, this.vf, this.tw, this.th).setActive(this.activeTile);
   }
 }
 //text data for renderers
