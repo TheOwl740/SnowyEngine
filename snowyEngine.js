@@ -65,7 +65,7 @@ class Pair {
     return this.x === pair.x && this.y === pair.y;
   }
   distToOrigin() {
-    return ((this.x ** 2) + (this.y ** 2)) ** 0.5;
+    return Math.hypot(this.x, this.y);
   }
 }
 //event tracker contains keypress, mouse and tap data, and can block context keys.
@@ -75,6 +75,7 @@ class EventTracker {
     //access values
     this.pressedKeys = [];
     this.pressedButtons = [];
+    this.activeTouch = false;
     this.cursor = new Pair(0, 0);
     this.cRect = cs.element.getBoundingClientRect();
     //prevention listeners
@@ -106,17 +107,10 @@ class EventTracker {
     document.addEventListener("mouseup", (e) => {
       this.pressedButtons.splice(this.pressedButtons.indexOf(e.button), 1);
     });
-    document.addEventListener("touchstart", (e) => {
-      [this.cursor.x, this.cursor.y] = [(e.touches[0].clientX - this.cRect.left) * (cs.element.width / this.cRect.width), (e.touches[0].clientY - this.cRect.top) * (cs.element.height / this.cRect.height) * -1];
-      this.pressedButtons.push(0);
-    });
-    document.addEventListener("touchend", () => {
-      this.pressedButtons.splice(this.pressedButtons.indexOf(0), 1);
-    });
   }
   //query dynamic cursor position
   dCursor(renderTool) {
-    return new Pair(this.cursor.x + renderTool.camera.x, this.cursor.y + renderTool.camera.y);
+    return new Pair((this.cursor.x * rt.zoom) + renderTool.camera.x, (this.cursor.y * rt.zoom) + renderTool.camera.y);
   }
   //get key presses
   getKey(name) {
@@ -127,7 +121,7 @@ class EventTracker {
     switch(button) {
       case "left":
         return this.pressedButtons.includes(0);
-      case "center":
+      case "wheel":
         return this.pressedButtons.includes(1);
       case "right":
         return this.pressedButtons.includes(2);
@@ -135,6 +129,103 @@ class EventTracker {
         return this.pressedButtons.includes(3);
       case "aux2":
         return this.pressedButtons.includes(4);
+    }
+  }
+}
+//tracks touch events for mobile devices
+class TouchTracker {
+  constructor(cs) {
+    //type
+    this.type = "touchTracker";
+    //bounding client for coord calculations
+    this.cRect = cs.element.getBoundingClientRect();
+    //touch data
+    this.activeTouches = [];
+    //listeners
+    //new finger placed
+    document.addEventListener("touchstart", (e) => {
+      for(let eTouchIndex = 0; eTouchIndex < e.touches.length; eTouchIndex++) {
+        let currentTouch = this.getTouchIndex(e.touches[eTouchIndex].identifier)
+        if(currentTouch === null) {
+          this.activeTouches.push(new TouchNode(e.touches[eTouchIndex].identifier, new Pair((e.touches[eTouchIndex].clientX - this.cRect.left) * (cs.element.width / this.cRect.width), (e.touches[eTouchIndex].clientY - this.cRect.top) * (cs.element.height / this.cRect.height) * -1)));
+        }
+      }
+    });
+    //finger moved
+    document.addEventListener("touchmove", (e) => {
+      //reset transforms and ping touch objects
+      for(let eTouchIndex = 0; eTouchIndex < e.touches.length; eTouchIndex++) {
+        let currentTouch = this.getTouchIndex(e.touches[eTouchIndex].identifier)
+        this.activeTouches[currentTouch].transform = new Pair((e.touches[eTouchIndex].clientX - this.cRect.left) * (cs.element.width / this.cRect.width), (e.touches[eTouchIndex].clientY - this.cRect.top) * (cs.element.height / this.cRect.height) * -1);
+        this.activeTouches[currentTouch].update();
+      }
+    });
+    //finger removed
+    document.addEventListener("touchend", (e) => {
+      //remove all removed touches
+      let verified;
+      for(let touchIndex = 0; touchIndex < this.activeTouches.length; touchIndex++) {
+        verified = false
+        for(let eTouchIndex = 0; eTouchIndex < e.touches.length; eTouchIndex++) {
+          if(this.activeTouches[touchIndex].identifier === e.touches[eTouchIndex].identifier) {
+            verified = true;
+          }
+        }
+        if(!verified) {
+          this.activeTouches.splice(touchIndex, 1);
+          touchIndex--;
+        }
+      }
+    });
+    //unexpected system cancel (same logic as removal)
+    document.addEventListener("touchcancel", (e) => {
+      //remove all removed touches
+      let verified;
+      for(let touchIndex = 0; touchIndex < this.activeTouches.length; touchIndex++) {
+        verified = false
+        for(let eTouchIndex = 0; eTouchIndex < e.touches.length; eTouchIndex++) {
+          if(this.activeTouches[touchIndex].identifier === e.touches[eTouchIndex].identifier) {
+            verified = true;
+          }
+        }
+        if(!verified) {
+          this.activeTouches.splice(touchIndex, 1);
+          touchIndex--;
+        }
+      }
+    });
+  }
+  getTouchIndex(identifier) {
+    for(let touchIndex = 0; touchIndex < this.activeTouches.length; touchIndex++) {
+      if(this.activeTouches[touchIndex].identifier === identifier) {
+        return touchIndex;
+      }
+    }
+    return null;
+  }
+}
+//touch objects for tracking individual touches
+class TouchNode {
+  constructor(identifier, sTransform) {
+    this.type = "touchNode";
+    //current state
+    this.state = "press";
+    //event id
+    this.identifier = identifier;
+    //start transform
+    this.sTransform = sTransform;
+    //current transform
+    this.transform = sTransform;
+  }
+  dTransform(rt) {
+    return new Pair((this.transform.x * rt.zoom) + rt.camera.x, (this.transform.y * rt.zoom) + rt.camera.y);
+  }
+  getMovement() {
+    return new Pair(this.transform.x - this.sTransform.x, this.transform.y - this.sTransform.y);
+  }
+  update() {
+    if(this.getMovement().distToOrigin() > 3) {
+      this.state = "drag";
     }
   }
 }
@@ -313,7 +404,7 @@ class RenderTool {
     //save canvas position
     this.canvas.cx.save();
     //translate canvas to rectangle and rotate
-    this.canvas.cx.translate(pair.x - this.camera.x, pair.y - this.camera.y);
+    this.canvas.cx.translate((pair.x - this.camera.x) / this.zoom, (pair.y - this.camera.y) / this.zoom);
     this.canvas.cx.rotate(rectangle.r * (Math.PI / 180));
     //draw
     this.canvas.cx.beginPath();
@@ -409,7 +500,7 @@ class RenderTool {
     if(img.type === "img") {
       this.canvas.cx.drawImage(img.img, ((img.x / this.zoom) * fc.x) - ((img.w / this.zoom) / 2), ((img.y / this.zoom) * fc.y) - ((img.h / this.zoom) / 2), img.w / this.zoom, img.h / this.zoom);
     } else {
-      this.canvas.cx.drawImage(img.img, (img.activeTile.x * img.tw) + 0.1, (img.activeTile.y * img.th) + 0.1, img.tw - 0.2, img.th - 0.2, ((img.x / this.zoom) * fc.x) - ((img.w / this.zoom) / 2), ((img.y / this.zoom) * fc.y) - ((img.h / this.zoom) / 2), img.w / this.zoom, img.h / this.zoom);
+      this.canvas.cx.drawImage(img.img, (img.activeTile.x * img.tw) + 0.01, (img.activeTile.y * img.th) + 0.01, img.tw - 0.02, img.th - 0.02, ((img.x / this.zoom) * fc.x) - ((img.w / this.zoom) / 2), ((img.y / this.zoom) * fc.y) - ((img.h / this.zoom) / 2), img.w / this.zoom, img.h / this.zoom);
     }
     //restore canvas
     this.canvas.cx.restore();
@@ -420,11 +511,11 @@ class RenderTool {
     this.canvas.cx.textBaseline = "middle";
     this.canvas.cx.save();
     this.canvas.cx.scale(1, -1);
-    this.canvas.cx.translate(pair.x, pair.y * -1);
+    this.canvas.cx.translate((pair.x - this.camera.x) / this.zoom, (pair.y - this.camera.y) / this.zoom * -1);
     this.canvas.cx.rotate(text.r * (Math.PI / 180));
     this.canvas.cx.globalAlpha = fill.alpha;
     [this.canvas.cx.font, this.canvas.cx.fillStyle] = [`${text.size / this.zoom}px ${text.font}`, fill.color];
-    this.canvas.cx.fillText(text.text, (-1 * this.camera.x / this.zoom), (this.camera.y / this.zoom));
+    this.canvas.cx.fillText(text.text, 0, 0);
     this.canvas.cx.restore();
   }
 }
@@ -473,7 +564,7 @@ class Toolkit {
       case "modulus":
         return new Pair(pair1.x % pair2.x, pair1.y % pair2.y);
       case "distance":
-        return Math.sqrt(Math.pow(pair1.x - pair2.x, 2) + Math.pow(pair1.y - pair2.y, 2));
+        return Math.hypot(pair1.x - pair2.x, pair1.y - pair2.y);
       case "angle":
         return Math.round(Math.atan2(pair1.y - pair2.y, pair1.x - pair2.x) * 57.2958) + 180;
     }
@@ -620,7 +711,7 @@ class PathfindingController {
     if(this.allowDiagonals) {
       const dx = Math.abs(a.x - b.x);
       const dy = Math.abs(a.y - b.y);
-      return (dx < dy) ? 0.4 * dx + dy : 0.4 * dy + dx;
+      return Math.hypot(dx, dy);
     } else {
       return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
     }
@@ -664,43 +755,18 @@ class PathfindingController {
     if(originIndex.isEqualTo(targetIndex)) {
       return null;
     }
-    nonwalkableIndices.forEach((nwIndex) => {
+    //return null if target is nonwalkable
+    for(let nwIndex of nonwalkableIndices) {
       if(nwIndex.isEqualTo(targetIndex)) {
         return null;
       }
-    });
+    }
     //while there are nodes to be evaluated
     while(open.length > 0) {
-      //checks loop count
+      //check for time overflow
       loopCount++;
       if(loopCount > loopCap) {
         return null;
-      }
-      //sort list by transform, then by f, then by h
-      open.sort((a, b) => {
-        if (a.index.isEqualTo(b.index)) {
-          if (a.f !== b.f) {
-            return a.f - b.f;
-          } else {
-            return a.h - b.h;
-          }
-        } else {
-          if (a.index.x !== b.index.x) {
-            return a.index.x - b.index.x;
-          } else {
-            return a.index.y - b.index.y;
-          }
-        }
-      });
-      //delete alike transforms
-      let currentOpenI = open[0].index;
-      for(let oi = 1; oi < open.length; oi++) {
-        if(open[oi].index.isEqualTo(currentOpenI)) {
-          open.splice(oi, 1);
-          oi--;
-        } else {
-          currentOpenI = open[oi].index;
-        }
       }
       //best node option tracker
       let bestNode = null;
@@ -735,7 +801,17 @@ class PathfindingController {
       }
       //add valid neighbors to open
       this.getNeighborIndices(current.index, closed, nonwalkableIndices).forEach((neighborIndex) => {
-        open.push(new PathNode(this, current, neighborIndex, targetIndex));
+        let foundMatch = false;
+        for(let node of open) {
+          if(node.index.isEqualTo(neighborIndex) && new PathNode(this, current, neighborIndex, targetIndex).g < node.g) {
+            foundMatch = true;
+            node.g = new PathNode(this, current, neighborIndex, targetIndex).g;
+            node.parentNode = current;
+          }
+        }
+        if(!foundMatch) {
+          open.push(new PathNode(this, current, neighborIndex, targetIndex));
+        }
       });
     }
     return null;
@@ -828,7 +904,7 @@ class Textbox extends TileScheme {
     //split text into lines
     while(splitText.length > 0) {
       nextLine = new TextNode(sourceText.font, "", sourceText.r, sourceText.size, sourceText.alignment);
-      while(splitText.length > 0 && nextLine.measure(this.renderTool) + new TextNode(sourceText.font, splitText[0], sourceText.r, sourceText.size, sourceText.alignment).measure(this.renderTool) < this.dimensions.x * 0.95) {
+      while(splitText.length > 0 && nextLine.measure(this.renderTool) + new TextNode(sourceText.font, splitText[0], sourceText.r, sourceText.size, sourceText.alignment).measure(this.renderTool) < this.dimensions.x - sourceText.size) {
         nextLine.text += splitText.shift() + " ";
       }
       this.textLines.push(nextLine);
