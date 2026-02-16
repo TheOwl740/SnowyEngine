@@ -25,7 +25,7 @@ class Canvas {
 class Pair {
   constructor(x, y) {
     this.type = "pair";
-    [this.x, this.y] = [x, y];
+    [this.x, this.y] = [x || 0, y || 0];
   }
   //add another pair
   add(pair) {
@@ -66,6 +66,14 @@ class Pair {
   }
   distToOrigin() {
     return Math.hypot(this.x, this.y);
+  }
+  stringKey(applyString) {
+    if(typeof applyString === "string") {
+      let nVals = applyString.split(',');
+      this.x = Number(nVals[0]);
+      this.y = Number(nVals[1]);
+    }
+    return `${this.x},${this.y}`
   }
 }
 //event tracker contains keypress, mouse and tap data, and can block context keys.
