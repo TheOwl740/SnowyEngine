@@ -72,6 +72,7 @@ class Pair {
       let nVals = applyString.split(',');
       this.x = Number(nVals[0]);
       this.y = Number(nVals[1]);
+      return this;
     }
     return `${this.x},${this.y}`
   }
