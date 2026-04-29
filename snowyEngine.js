@@ -4,13 +4,17 @@
 class Canvas {
   constructor(element) {
     this.type = "canvas";
+    //document object
     this.element = element;
+    //canvas context
     this.cx = this.element.getContext("2d");
+    //pixel scaling
     [this.w, this.h] = [this.element.width, this.element.height];
+    //set scale to match coordinate plane
     this.cx.scale(1, -1);
   }
-  //clears canvas with fill values
-  fillAll(fill) {
+  //fills canvas with color from fill object
+  fillAll(fill = new Fill()) {
     this.cx.fillStyle = fill.color;
     this.cx.globalAlpha = fill.alpha;
     this.cx.fillRect(0, 0, this.w, this.h * -1);
@@ -23,9 +27,9 @@ class Canvas {
 }
 //2d coordinate pair used in many calculations
 class Pair {
-  constructor(x, y) {
+  constructor(x = 0, y = 0) {
     this.type = "pair";
-    [this.x, this.y] = [x || 0, y || 0];
+    [this.x, this.y] = [x, y];
   }
   //add another pair
   add(pair) {
@@ -46,7 +50,7 @@ class Pair {
     return this;
   }
   //round values
-  round(precision) {
+  round(precision = 0) {
     [this.x, this.y] = [Math.round(this.x * Math.pow(10, precision)) / Math.pow(10, precision), Math.round(this.y * Math.pow(10, precision)) / Math.pow(10, precision)];
     return this;
   }
@@ -67,11 +71,10 @@ class Pair {
   distToOrigin() {
     return Math.hypot(this.x, this.y);
   }
-  stringKey(applyString) {
-    if(typeof applyString === "string") {
+  stringKey(impString = false) {
+    if(typeof impString === "string") {
       let nVals = applyString.split(',');
-      this.x = Number(nVals[0]);
-      this.y = Number(nVals[1]);
+      [this.x, this.y] = [Number(nVals[0]), Number(nVals[1])]
       return this;
     }
     return `${this.x},${this.y}`
@@ -277,7 +280,7 @@ class Collider {
 }
 //fill data for rendering methods
 class Fill {
-  constructor(color, alpha) {
+  constructor(color = "#000000", alpha = 1) {
     this.type = "fill";
     this.color = color;
     this.alpha = alpha;
@@ -285,15 +288,15 @@ class Fill {
 }
 //border data for renderers
 class Border {
-  constructor(color, alpha, w, corner) {
+  constructor(w, corner = "bevel", color = "#000000", alpha = 1) {
     this.type = "border";
-    [this.color, this.corner] = [color, corner];
-    [this.alpha, this.w] = [alpha, w];
+    [this.w, this.alpha] = [w, alpha];
+    [this.corner, this.color] = [corner, color];
   }
 }
 //image data for renderers
 class Img {
-  constructor(img, alpha, r, x, y, w, h, hf, vf) {
+  constructor(img, w, h, r = 0, alpha = 1, x = 0, y = 0, hf = false, vf = false) {
     this.type = "img";
     this.img = img;
     [this.alpha, this.x, this.y, this.w, this.h, this.r] = [alpha, x, y, w, h, r];
@@ -305,7 +308,7 @@ class Img {
 }
 //spritesheet image data for renderers
 class Sprite {
-  constructor(img, alpha, r, x, y, w, h, hf, vf, tw, th) {
+  constructor(img, tw, th, w, h, r = 0, x = 0, y = 0, alpha = 1, hf = false, vf = false) {
     this.type = "sprite";
     this.img = img;
     this.activeTile = new Pair(0, 0);
@@ -324,7 +327,7 @@ class Sprite {
 }
 //text data for renderers
 class TextNode {
-  constructor(font, text, r, size, alignment) {
+  constructor(text, size, font = "Courier", r = 0, alignment = "left") {
     this.type = "text";
     [this.font, this.text] = [font, text];
     [this.r, this.size] = [r, size];
@@ -355,14 +358,14 @@ class Circle {
 }
 //rectangle data for renderers and colliders
 class Rectangle {
-  constructor(r, w, h) {
+  constructor(w, h, r = 0) {
     this.type = "rectangle";
-    [this.r, this.w, this.h] = [r, w, h];
+    [this.w, this.h, this.r] = [w, h, r];
   }
 }
 //shape data for renderers and colliders
 class Shape {
-  constructor(pairs, r) {
+  constructor(pairs, r = 0) {
     this.type = "shape";
     this.pairs = pairs;
     this.r = r;
@@ -376,7 +379,7 @@ class Shape {
 }
 //line data for renderers
 class Line {
-  constructor(pairs, r) {
+  constructor(pairs, r = 0) {
     this.type = "line";
     this.pairs = pairs;
     this.r = r;
@@ -391,16 +394,14 @@ class RenderTool {
     this.zoom = 1;
   }
   //renders a circle
-  renderCircle(pair, circle, fill, border) {
+  renderCircle(pair, circle, fill = new Fill(), border = null) {
     //draw
     this.canvas.cx.beginPath();
     this.canvas.cx.arc((pair.x - this.camera.x) / this.zoom, (pair.y - this.camera.y) / this.zoom, (circle.d / 2) / this.zoom, 0, 2 * Math.PI, false);
     //fill
-    if(fill !== null) {
-      this.canvas.cx.globalAlpha = fill.alpha;
-      this.canvas.cx.fillStyle = fill.color;
-      this.canvas.cx.fill();
-    }
+    this.canvas.cx.globalAlpha = fill.alpha;
+    this.canvas.cx.fillStyle = fill.color;
+    this.canvas.cx.fill();
     //border
     if(border !== null) {
       [this.canvas.cx.globalAlpha, this.canvas.cx.lineWidth] = [border.alpha, border.w / this.zoom];
@@ -409,7 +410,7 @@ class RenderTool {
     }
   }
   //renders a rectangle
-  renderRectangle(pair, rectangle, fill, border) {
+  renderRectangle(pair, rectangle, fill = new Fill(), border = null) {
     //save canvas position
     this.canvas.cx.save();
     //translate canvas to rectangle and rotate
@@ -419,11 +420,9 @@ class RenderTool {
     this.canvas.cx.beginPath();
     this.canvas.cx.rect((rectangle.w / -2) / this.zoom, (rectangle.h / -2) / this.zoom, rectangle.w / this.zoom, rectangle.h / this.zoom);
     //fill
-    if(fill !== null) {
-      this.canvas.cx.globalAlpha = fill.alpha;
-      this.canvas.cx.fillStyle = fill.color;
-      this.canvas.cx.fill();
-    }
+    this.canvas.cx.globalAlpha = fill.alpha;
+    this.canvas.cx.fillStyle = fill.color;
+    this.canvas.cx.fill();
     //border
     if(border !== null) {
       [this.canvas.cx.globalAlpha, this.canvas.cx.lineWidth] = [border.alpha, border.w / this.zoom];
@@ -454,7 +453,7 @@ class RenderTool {
     this.canvas.cx.restore();
   }
   //renders a shape
-  renderShape(pair, shape, fill, border) {
+  renderShape(pair, shape, fill = new Fill(), border = null) {
     //save canvas position
     this.canvas.cx.save();
     //translate canvas to rectangle and rotate
@@ -468,11 +467,9 @@ class RenderTool {
     });
     this.canvas.cx.closePath();
     //fill
-    if(fill !== null) {
-      this.canvas.cx.globalAlpha = fill.alpha;
-      this.canvas.cx.fillStyle = fill.color;
-      this.canvas.cx.fill();
-    }
+    this.canvas.cx.globalAlpha = fill.alpha;
+    this.canvas.cx.fillStyle = fill.color;
+    this.canvas.cx.fill();
     //border
     if(border !== null) {
       [this.canvas.cx.globalAlpha, this.canvas.cx.lineWidth] = [border.alpha, border.w / this.zoom];
@@ -515,7 +512,7 @@ class RenderTool {
     this.canvas.cx.restore();
   }
   //render text
-  renderText(pair, text, fill) {
+  renderText(pair, text, fill = new Fill()) {
     this.canvas.cx.textAlign = text.alignment;
     this.canvas.cx.textBaseline = "middle";
     this.canvas.cx.save();
@@ -540,12 +537,12 @@ class Toolkit {
     return holdingObject;
   }
   //generates random ints
-  randomNum(limit1, limit2) {
-    if(limit1 < limit2) {
-      return Math.floor((Math.random() * (Math.abs(limit1 - limit2) + 1)) + limit1);
-    } else {
-      return Math.floor((Math.random() * (Math.abs(limit2 - limit1) + 1)) + limit2);
+  randomNum(min, max) {
+    //check relation
+    if(min > max) {
+      throw new Error("Toolkit.randomNum: min > max");
     }
+    return Math.floor((Math.random() * (Math.abs(min - max) + 1)) + min);
   }
   //calculates the average value of an array of numbers
   calcAverage(values) {
@@ -556,11 +553,15 @@ class Toolkit {
     return currentMutation / values.length;
   }
   //rounds values
-  roundNum(value, precision) {
+  roundNum(value, precision = 0) {
     return Math.round(value * Math.pow(10, precision)) / Math.pow(10, precision);
   }
   //performs non mutative math on two pairs
-  pairMath(pair1, pair2, operation) {
+  pairMath(pair1, pair2, operation = "add") {
+    //check params
+    if(pair1.type !== "pair" || pair2.type !== "pair") {
+      throw new Error("Toolkit.pairMath: incorrect argument type");
+    }
     switch(operation) {
       case "add":
         return new Pair(pair1.x + pair2.x, pair1.y + pair2.y);
@@ -578,7 +579,7 @@ class Toolkit {
         return Math.round(Math.atan2(pair1.y - pair2.y, pair1.x - pair2.x) * 57.2958) + 180;
     }
   }
-  //generates a midpoint between multiple pairs
+  //generates the mean of multiple pairs
   calcAveragePair(pairs) {
     let retPair = new Pair(0, 0);
     pairs.forEach((pair) => {
@@ -592,6 +593,10 @@ class Toolkit {
   }
   //detect collisions
   detectCollision(collider1, collider2) {
+    //check params
+    if((!["pair", "collider"].includes(collider1.type)) || collider2.type !== "collider") {
+      throw new Error("Toolkit.detectCollision: incorrect argument type");
+    }
     //data
     let lastPoint;
     let passthroughs;
@@ -711,7 +716,7 @@ class Toolkit {
 }
 //tile based pathfinding class, takes in a grid matrix of tile objects
 class PathfindingController {
-  constructor(grid, allowDiagonals) {
+  constructor(grid, allowDiagonals = false) {
     //the matrix of tiles to pathfind across
     this.grid = grid;
     this.allowDiagonals = allowDiagonals;
@@ -751,7 +756,11 @@ class PathfindingController {
     }
     return neighbors;
   }
-  pathfind(originIndex, targetIndex, nonwalkableIndices, loopCap) {
+  pathfind(originIndex, targetIndex, nonwalkableIndices, loopCap = 100000) {
+    //throw error if at target
+    if(originIndex.isEqualTo(targetIndex)) {
+      throw new Error("PathfindingController.pathfind: origin index is equal to target index");
+    }
     //nodes to be evaluated list
     const open = [new PathNode(this, null, originIndex, targetIndex)];
     //nodes already evaluated list initialised with start node
@@ -760,10 +769,6 @@ class PathfindingController {
     let current;
     //loop limiter
     let loopCount = 0;
-    //return null if at target
-    if(originIndex.isEqualTo(targetIndex)) {
-      return null;
-    }
     //return null if target is nonwalkable
     for(let nwIndex of nonwalkableIndices) {
       if(nwIndex.isEqualTo(targetIndex)) {
@@ -850,7 +855,7 @@ class PathNode {
 }
 //advanced timer class
 class GameTimer {
-  constructor(func, interval) {
+  constructor(func, interval = 16) {
     this.timer = null;
     this.interval = interval;
     this.lastTime = new Date();
